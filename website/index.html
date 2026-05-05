@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route des Vins — Marguerite</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Montserrat:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=1774000500">
+    <!-- Firebase SDK (compat — fonctionne sans bundler) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <!-- =========================================================
+         LANDING PAGE OVERLAY — 70s Editorial Hero
+         ========================================================= -->
+    <div id="landing-overlay" class="landing-overlay">
+
+        <!-- Navigation -->
+        <nav class="landing-nav" id="landing-nav">
+            <div class="landing-nav-logo">
+                <span class="landing-nav-dot"></span>
+                <span class="landing-nav-brand">Marguerite</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+                <button class="theme-toggle-btn" id="theme-toggle-landing" onclick="toggleTheme()" aria-label="Basculer thème">
+                    <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+                    <span class="theme-toggle-icon">🌙</span>
+                </button>
+                <button class="landing-nav-cta" onclick="dismissLanding()">Ma Carte →</button>
+            </div>
+        </nav>
+
+        <!-- Hero Poster -->
+        <section class="landing-hero">
+
+            <!-- Colonne gauche : typographie géante -->
+            <div class="landing-hero-left">
+                <span class="landing-label">Guide Viticole · Marguerite</span>
+                <h1 class="landing-title-main">La Route</h1>
+                <div class="landing-sun" aria-hidden="true"></div>
+                <h1 class="landing-title-italic">des Vins</h1>
+                <div class="landing-stats">
+                    <div class="landing-stat">
+                        <span class="landing-stat-num">320+</span>
+                        <span class="landing-stat-lbl">Domaines</span>
+                    </div>
+                    <div class="landing-stat-sep"></div>
+                    <div class="landing-stat">
+                        <span class="landing-stat-num">89</span>
+                        <span class="landing-stat-lbl">Départements</span>
+                    </div>
+                    <div class="landing-stat-sep"></div>
+                    <div class="landing-stat">
+                        <span class="landing-stat-num">12</span>
+                        <span class="landing-stat-lbl">Régions</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne droite : carrousel + CTA -->
+            <div class="landing-hero-right">
+                <div class="landing-carousel-wrap">
+                    <div class="landing-carousel" id="landing-carousel">
+                        <!-- slides injectées par JS -->
+                    </div>
+                    <div class="landing-carousel-dots" id="landing-dots"></div>
+                </div>
+                <div class="landing-cta-zone">
+                    <p class="landing-desc">Parcourez les vignobles de France,<br>découvrez les domaines, planifiez votre route.</p>
+                    <button class="landing-explore-btn" onclick="dismissLanding()">Explorer la carte →</button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ─── Wave divider ──────────────────────────────── -->
+        <div class="landing-wave">
+            <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="white"/>
+            </svg>
+        </div>
+
+        <!-- ─── Section Étapes ───────────────────────────── -->
+        <section class="landing-etapes">
+            <div class="landing-etapes-header">
+                <div>
+                    <span class="landing-section-label">Explorer</span>
+                    <h2 class="landing-section-title">Les étapes<br><em>de la route</em></h2>
+                </div>
+                <button class="landing-etapes-link" onclick="dismissLanding()">Toutes les régions →</button>
+            </div>
+            <div class="landing-etapes-grid">
+
+                <div class="landing-etape-card" onclick="goToRegion('49')" style="cursor:pointer;">
+                    <div class="landing-etape-img-placeholder"><img src="images/landing/region-loire.JPG" alt="Pays de la Loire" class="landing-etape-img"></div>
+                    <div class="landing-etape-body">
+                        <div class="landing-etape-meta">
+                            <span class="landing-etape-num" style="color:#5F6F52">01</span>
+                            <span class="landing-etape-dot" style="background:#5F6F52"></span>
+                        </div>
+                        <h3 class="landing-etape-name">Pays de la Loire</h3>
+                        <p class="landing-etape-desc">Des vignes de Muscadet aux châteaux de Touraine.</p>
+                        <div class="landing-etape-tags">
+                            <span class="landing-etape-tag" style="color:#5F6F52;background:rgba(95,111,82,0.1)">Blanc</span>
+                            <span class="landing-etape-tag" style="color:#5F6F52;background:rgba(95,111,82,0.1)">Rosé</span>
+                            <span class="landing-etape-tag" style="color:#5F6F52;background:rgba(95,111,82,0.1)">Pétillant</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-etape-card" onclick="goToRegion('39')" style="cursor:pointer;">
+                    <div class="landing-etape-img-placeholder"><img src="images/landing/region-jura.JPG" alt="Jura" class="landing-etape-img"></div>
+                    <div class="landing-etape-body">
+                        <div class="landing-etape-meta">
+                            <span class="landing-etape-num" style="color:#C4661F">02</span>
+                            <span class="landing-etape-dot" style="background:#C4661F"></span>
+                        </div>
+                        <h3 class="landing-etape-name">Jura</h3>
+                        <p class="landing-etape-desc">Vin Jaune, Crémant et cépages autochtones sur argilo-calcaires.</p>
+                        <div class="landing-etape-tags">
+                            <span class="landing-etape-tag" style="color:#C4661F;background:rgba(196,102,31,0.1)">Blanc</span>
+                            <span class="landing-etape-tag" style="color:#C4661F;background:rgba(196,102,31,0.1)">Pétillant</span>
+                            <span class="landing-etape-tag" style="color:#C4661F;background:rgba(196,102,31,0.1)">Vin Jaune</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-etape-card" onclick="goToRegion('51')" style="cursor:pointer;">
+                    <div class="landing-etape-img-placeholder"><img src="images/landing/region-champagne.JPG" alt="Champagne" class="landing-etape-img"></div>
+                    <div class="landing-etape-body">
+                        <div class="landing-etape-meta">
+                            <span class="landing-etape-num" style="color:#1C4220">03</span>
+                            <span class="landing-etape-dot" style="background:#1C4220"></span>
+                        </div>
+                        <h3 class="landing-etape-name">Champagne</h3>
+                        <p class="landing-etape-desc">Grandes maisons et vignerons indépendants de la Montagne de Reims.</p>
+                        <div class="landing-etape-tags">
+                            <span class="landing-etape-tag" style="color:#1C4220;background:rgba(28,66,32,0.1)">Bulles</span>
+                            <span class="landing-etape-tag" style="color:#1C4220;background:rgba(28,66,32,0.1)">Blanc de Blancs</span>
+                            <span class="landing-etape-tag" style="color:#1C4220;background:rgba(28,66,32,0.1)">Brut Nature</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-etape-card" onclick="goToRegion('33')" style="cursor:pointer;">
+                    <div class="landing-etape-img-placeholder"><img src="images/chateau%20bordeau.jpeg" alt="Bordeaux" class="landing-etape-img"></div>
+                    <div class="landing-etape-body">
+                        <div class="landing-etape-meta">
+                            <span class="landing-etape-num" style="color:#C4661F">04</span>
+                            <span class="landing-etape-dot" style="background:#C4661F"></span>
+                        </div>
+                        <h3 class="landing-etape-name">Bordeaux</h3>
+                        <p class="landing-etape-desc">Châteaux mythiques et merlots de la Rive Droite.</p>
+                        <div class="landing-etape-tags">
+                            <span class="landing-etape-tag" style="color:#C4661F;background:rgba(196,102,31,0.1)">Rouge</span>
+                            <span class="landing-etape-tag" style="color:#C4661F;background:rgba(196,102,31,0.1)">Blanc sec</span>
+                            <span class="landing-etape-tag" style="color:#C4661F;background:rgba(196,102,31,0.1)">Liquoreux</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-etape-card" onclick="goToRegion('42')" style="cursor:pointer;">
+                    <div class="landing-etape-img-placeholder"><img src="images/landing/region-roannaise.JPG" alt="Côte Roannaise" class="landing-etape-img"></div>
+                    <div class="landing-etape-body">
+                        <div class="landing-etape-meta">
+                            <span class="landing-etape-num" style="color:#A8541A">05</span>
+                            <span class="landing-etape-dot" style="background:#A8541A"></span>
+                        </div>
+                        <h3 class="landing-etape-name">Côte Roannaise</h3>
+                        <p class="landing-etape-desc">Gamay Saint Romain sur granit, fraîcheur et verticalité.</p>
+                        <div class="landing-etape-tags">
+                            <span class="landing-etape-tag" style="color:#A8541A;background:rgba(168,84,26,0.1)">Rouge</span>
+                            <span class="landing-etape-tag" style="color:#A8541A;background:rgba(168,84,26,0.1)">Blanc</span>
+                            <span class="landing-etape-tag" style="color:#A8541A;background:rgba(168,84,26,0.1)">Bio</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ─── Wave divider ──────────────────────────────── -->
+        <div class="landing-wave">
+            <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,30 C360,0 1080,60 1440,30 L1440,60 L0,60 Z" fill="#EDE0CB"/>
+            </svg>
+        </div>
+
+        <!-- ─── Section Domaines ─────────────────────────── -->
+        <section class="landing-domaines">
+            <div class="landing-domaines-header">
+                <div>
+                    <span class="landing-section-label">Sélection</span>
+                    <h2 class="landing-section-title">Fiches<br><em>domaines</em></h2>
+                </div>
+                <div class="landing-domaines-filters">
+                    <span class="landing-domaines-label" onclick="dismissLanding()" style="cursor:pointer">Tous les domaines →</span>
+                </div>
+            </div>
+            <div class="landing-domaines-grid">
+
+                <div class="landing-domaine-card" onclick="goToDomaine('49', 0)" style="cursor:pointer;">
+                    <div class="landing-domaine-img-wrap">
+                        <img src="images/Mahé.jpeg" alt="Loïc Mahé" class="landing-domaine-img">
+                    </div>
+                    <div class="landing-domaine-body">
+                        <span class="landing-domaine-region">Val de Loire</span>
+                        <h3 class="landing-domaine-name">Loïc Mahé</h3>
+                        <p class="landing-domaine-appellation">Savennières · Chenin Blanc</p>
+                        <div class="landing-domaine-footer">
+                            <button class="landing-domaine-cta">Voir la fiche →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-domaine-card" onclick="goToDomaine('39', 0)" style="cursor:pointer;">
+                    <div class="landing-domaine-img-wrap">
+                        <img src="images/Tissot.JPG" alt="Stéphane & Bénédicte Tissot" class="landing-domaine-img">
+                    </div>
+                    <div class="landing-domaine-body">
+                        <span class="landing-domaine-region">Jura</span>
+                        <h3 class="landing-domaine-name">Stéphane &amp; Bénédicte Tissot</h3>
+                        <p class="landing-domaine-appellation">Arbois · Chardonnay, Savagnin</p>
+                        <div class="landing-domaine-footer">
+                            <button class="landing-domaine-cta">Voir la fiche →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-domaine-card" onclick="goToDomaine('51', 1)" style="cursor:pointer;">
+                    <div class="landing-domaine-img-wrap">
+                        <img src="images/Agrapart.JPG" alt="Pascal Agrapart" class="landing-domaine-img">
+                    </div>
+                    <div class="landing-domaine-body">
+                        <span class="landing-domaine-region">Champagne</span>
+                        <h3 class="landing-domaine-name">Pascal Agrapart</h3>
+                        <p class="landing-domaine-appellation">Côte des Blancs · Chardonnay</p>
+                        <div class="landing-domaine-footer">
+                            <button class="landing-domaine-cta">Voir la fiche →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-domaine-card" onclick="goToDomaine('44', 0)" style="cursor:pointer;">
+                    <div class="landing-domaine-img-wrap">
+                        <img src="images/Chevalier.JPG" alt="Eric Chevalier" class="landing-domaine-img">
+                    </div>
+                    <div class="landing-domaine-body">
+                        <span class="landing-domaine-region">Loire</span>
+                        <h3 class="landing-domaine-name">Eric Chevalier</h3>
+                        <p class="landing-domaine-appellation">Muscadet Côtes de Grand Lieu · Melon de Bourgogne</p>
+                        <div class="landing-domaine-footer">
+                            <button class="landing-domaine-cta">Voir la fiche →</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ─── Wave divider ──────────────────────────────── -->
+        <div class="landing-wave" style="background:#EDE0CB">
+            <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,60 C480,0 960,60 1440,20 L1440,60 L0,60 Z" fill="#1C4220"/>
+            </svg>
+        </div>
+
+        <!-- ─── Section CTA ───────────────────────────────── -->
+        <section class="landing-cta-section">
+            <div class="landing-cta-circle" style="width:600px;height:600px"></div>
+            <div class="landing-cta-circle" style="width:900px;height:900px"></div>
+            <div class="landing-cta-inner">
+                <div class="landing-cta-sun"></div>
+                <h2 class="landing-cta-title">Créez votre<br><em>propre route</em></h2>
+                <p class="landing-cta-text">Connectez-vous pour sauvegarder vos domaines, noter vos cuvées préférées et partager votre carnet de route avec vos amis.</p>
+                <div class="landing-cta-buttons">
+                    <button class="landing-cta-btn-primary" onclick="dismissLanding(); setTimeout(openAuthModal, 400)">Commencer gratuitement</button>
+                    <button class="landing-cta-btn-secondary" onclick="dismissLanding()">Explorer sans compte</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── Footer ────────────────────────────────────── -->
+        <footer class="landing-footer">
+            <div class="landing-footer-top">
+                <div>
+                    <span class="landing-footer-brand">Marguerite</span>
+                    <p class="landing-footer-tagline">La route des vins, à votre façon.</p>
+                </div>
+                <div class="landing-footer-col">
+                    <h4>Explorer</h4>
+                    <a href="#" onclick="dismissLanding()">La Carte</a>
+                    <a href="#" onclick="event.preventDefault(); document.querySelector('.landing-etapes')?.scrollIntoView({behavior:'smooth'})">Les Étapes</a>
+                    <a href="#" onclick="event.preventDefault(); document.querySelector('.landing-domaines')?.scrollIntoView({behavior:'smooth'})">Les Domaines</a>
+                </div>
+                <div class="landing-footer-col">
+                    <h4>Compte</h4>
+                    <a href="#" onclick="dismissLanding()">Ma Carte</a>
+                    <a href="#" onclick="dismissLanding(); setTimeout(openAuthModal, 400)">Connexion</a>
+                    <a href="#" onclick="dismissLanding()">Coups de cœur</a>
+                </div>
+            </div>
+            <div class="landing-footer-bottom">
+                <span class="landing-footer-copy">© 2025 Route des Vins Marguerite</span>
+                <span class="landing-footer-copy">Fait avec soin · France 🇫🇷</span>
+            </div>
+        </footer>
+
+    </div>
+    <!-- /landing-overlay -->
+
+    <!-- ===== NAV CARTE ===== -->
+    <nav id="carte-nav">
+        <div class="cn-logo" onclick="showLanding()" style="cursor:pointer;">
+            <div class="cn-logo-dot"></div>
+            <span class="cn-brand">Marguerite</span>
+        </div>
+        <div class="cn-links">
+            <a href="#" onclick="dismissLanding(); return false;" class="cn-link">Accueil</a>
+            <a href="#" class="cn-link active">La Carte</a>
+        </div>
+
+        <!-- Barre de recherche globale -->
+        <div id="search-container">
+            <div id="search-bar">
+                <span id="search-icon" aria-hidden="true">&#9906;</span>
+                <input id="search-input" type="text"
+                       placeholder="Cépage, arôme, lieu, couleur, tanins…"
+                       autocomplete="off" spellcheck="false" aria-label="Rechercher un vin">
+                <button id="search-clear" aria-label="Effacer">&#10005;</button>
+            </div>
+        </div>
+
+        <div class="cn-actions">
+            <!-- Barre utilisateur -->
+            <div id="user-bar">
+                <button id="user-btn" onclick="openAuthModal()">👤 Connexion</button>
+                <button id="coeur-btn" class="hidden" onclick="showFavoritesPanel()">♥ Coups de Cœur</button>
+                <button id="reseau-btn" class="hidden" onclick="openReseau()">🌐 Mon Réseau</button>
+                <button id="itin-fab" class="itin-fab hidden" onclick="toggleItinerary()" aria-label="Mon itinéraire de visite">
+                    <span class="itin-fab-icon">🗺</span>
+                    <span class="itin-fab-label">Mon Itinéraire</span>
+                    <span id="itin-fab-badge" class="itin-fab-badge hidden">0</span>
+                </button>
+            </div>
+            <button id="mes-donnees-btn" class="hidden" onclick="openMesDonnees()">Mes Données</button>
+            <button id="mc-fab" class="hidden" onclick="openMcForm()" aria-label="Ajouter un domaine à Ma Carte">+ Cartes &amp; Cuvées</button>
+            <button class="theme-toggle-btn" id="theme-toggle-carte" onclick="toggleTheme()" aria-label="Basculer thème">
+                <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
+                <span class="theme-toggle-icon">🌙</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Bloc minimal : bouton retour + titre (conservés pour la compatibilité JS) -->
+    <div id="top-left-block">
+        <button id="back-button" class="hidden" onclick="returnToMap()">← Retour à la carte</button>
+        <div id="title-overlay" onclick="window.location.href='index.html'" style="cursor:pointer;">
+            Route des Vins <em>Marguerite</em>
+            <div class="subtitle">Cliquez sur un département viticole</div>
+        </div>
+        <!-- Zone admin -->
+        <div id="admin-corner">
+            <span id="admin-badge" class="hidden">⚙ Admin</span>
+            <button id="admin-tools-btn" class="hidden" onclick="window.open('admin.html','_blank')">⚙ Outils d'administration</button>
+        </div>
+    </div>
+
+    <!-- Carte interactive -->
+    <div id="map-container">
+
+
+        <!-- Contrôles zoom (bas droite) -->
+        <div id="map-zoom-controls">
+            <button class="mzc-btn" onclick="mapZoomIn()" aria-label="Zoom avant">+</button>
+            <button class="mzc-btn" onclick="mapZoomOut()" aria-label="Zoom arrière">−</button>
+            <button class="mzc-btn" onclick="mapZoomReset()" aria-label="Recentrer">⊕</button>
+        </div>
+
+        <svg id="france-map" viewBox="105 18 568 567" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="0.5" />
+                    <feOffset dx="0" dy="0.5" result="offsetblur" />
+                    <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.3" />
+                    </feComponentTransfer>
+                    <feMerge>
+                        <feMergeNode />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+                <filter id="hover-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="1" />
+                    <feOffset dx="0" dy="1" result="offsetblur" />
+                    <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.5" />
+                    </feComponentTransfer>
+                    <feMerge>
+                        <feMergeNode />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+            <path data-numerodepartement="75" data-nom="Paris"
+                d="M 396.8000 154.7000l-3.2-0.5-2.5 1.7 3 3.5 5.3-0.1-1.8-1.9z" />
+            <path data-numerodepartement="77" data-nom="Seine-et-Marne"
+                d="M 441.1000 176.1000l-2.9 0.8 0.4 8.5-15.4 3-0.2 5.8-3.9 5.4-11.2 2.7-9.2-0.7 2.6-1.5 0.6-2.7-4.2-4.3-0.7-3.1 3.4-4.8 4-17.2-0.5-1 1.1-4.1-0.3-2.9v-0.1l-1.3-4.7 1.3-2.5-1.7-5.1 0.1-0.1 1.7-2.3-0.2-2 6.9 1 2-2.2 2.5 1.6 8.1-2.9 2.6 0.7 1.8 2.5-0.7 2.8 3.9 4.2 9.3 6-0.4 2-2.6 2.2 3.5 8.3 2.6 1.7z" />
+            <path data-numerodepartement="78" data-nom="Yvelines"
+                d="M 364.1000 158.1000l-3.6-6.6-1.8-5.8 2.3-2.6 3.8 0.1 9.5 0.8 9 3.6 5.5 6.1-2 3.1 3.2 5.2-7.1 5.4-1.6 2.6 0.7 2.9-4.6 8.6-3.1 0.7-2.3-2.2-1.2-5.6-6.2-5.4z" />
+            <path data-numerodepartement="91" data-nom="Essonne"
+                d="M 401.6000 164.8000l2.3 2.2 0.5 1-4 17.2-3.4 4.8-3.7-0.6-2.8 1.8-1.5-2.7-1.9 2.9-6.9 0.7-2.8-10.6 4.6-8.6-0.7-2.9 1.6-2.6 7.1-5.4v-0.1l3.7 1.6 5.1 2.1z" />
+            <path data-numerodepartement="92" data-nom="Hauts-de-Seine"
+                d="M 391.1000 155.9000l3 3.5-0.4 4.1-3.7-1.6v0.1l-3.2-5.2 2-3.1 3.6-2.6 1.3 2-0.1 1.1z" />
+            <path data-numerodepartement="93" data-nom="Seine-Saint-Denis"
+                d="M 404.7000 152.7000l-1.3 2.5 1.3 4.7v0.1l-7.1-2.6-0.8-2.7-3.2-0.5 0.1-1.1-1.3-2 3.3-1.3 2.6 1.1c1.6-1.1 3.2-2.2 4.7-3.3z" />
+            <path data-numerodepartement="94" data-nom="Val-de-Marne"
+                d="M 404.7000 160.0000l0.3 2.9-1.1 4.1-2.3-2.2-2.8 0.8-5.1-2.1 0.4-4.1 5.3-0.1-1.8-1.9z" />
+            <path data-numerodepartement="95" data-nom="Val-dÆOise"
+                d="M 374.3000 144.0000l-9.5-0.8 4-9.5 1.6 3.2 5.6 1.1 6.3-1.8 9.2 2.2 2.2-1.6 10.9 6.4 0.2 2-1.7 2.3-0.1 0.1c-1.5 1.1-3.1 2.2-4.7 3.3l-2.6-1.1-3.3 1.3-3.6 2.6-5.5-6.1z" />
+            <path data-numerodepartement="18" data-nom="Cher"
+                d="m385.3 235.4l5-2.4 13.5 3.1 3.9 4.8 9-1.7 2 6.5-1.7 5.8 2.7 2.1 3.1 7.6 0.3 5.9 2.2 2-0.2 5.8-1.3 8.9h-0.1-4l-4.8 3.7-8.4 2.9-2.3 1.9 1.7 5.3-1.7 2.4-8.7 1-3.5 5.9v0.1l-4.9-0.2 1.5-3.5-0.9-8.9-4.7-7.9 1.4-2.7-2.3-2.2 2.5-5.1-2.3-11.7-11.6-1.6 2.8-5.5 2.8 0.1 0.6-2.8 9.7-2-2.1-5.9 5.9-4.1z" />
+            <path data-numerodepartement="28" data-nom="Eure-et-Loir"
+                d="m333.1 200.9l-2.1-3.8-1.1-7.5 7.5-5.1-0.5-4.6 0.2-4.5-4.8-4.4-0.1-3.2 2.4-2.6 6-1.1 5.3-3.2 2.8 1.6 6-1.3-0.2-2.8 6-6.9 3.6 6.6 0.5 10.9 6.2 5.4 1.2 5.6 2.3 2.2 3.1-0.7 2.8 10.6-0.5 1.5-4.8 10.8-8.5 0.6-6 2.8 0.2 2.8-3.3-1.9-5.5 3.5-12.8-10.8-6.3 1.3z" />
+            <path data-numerodepartement="36" data-nom="Indre"
+                d="m357.8 308.5l-2.8 2.9-1.7-2.5-5.8 1.1-2.6-1.1 1.5-2.8-2.5-1.3-2.6-5.4h-2.9l-4.6-4.4 0.8-5.8-2.1-3 5.6-0.5-1-2.7 3.3-11.9 5.1-2.7 2.3 1.7 2.6-3.5 2.5-2.1-1-4.9 6-3.2 2.5 1.3 1.5-2.6 6.4-0.9 5.2 3.5-2.8 5.5 11.6 1.6 2.3 11.7-2.5 5.1 2.3 2.2-1.4 2.7 4.7 7.9 0.9 8.9-1.5 3.5-2.7 0.8-13.2-2.7-1.9 2.5z" />
+            <path data-numerodepartement="37" data-nom="Indre-et-Loire" class="wine-region"
+                d="m303.9 263l-5.5-3.2v-0.1l5.8-15.3 1.7-9.3 0.7-2.4 6.1 2.6-0.5-3.3 2.8 0.3 7.7-4.5 10.5 0.5-0.2 5.5 2.2-1.8 6 3.4-0.7 2.7 3.4 5.1-1.2 9.1 2.4 1.9 2.6-1.3 4.2 6.7 1 4.9-2.5 2.1-2.6 3.5-2.3-1.7-5.1 2.7-3.3 11.9 1 2.7-5.6 0.5-7.1-10-0.3-3.1-5.3-3 1.4 2.9-10 0.4-2.8-1.4-1.3-6.1-2.9 0.3z" />
+            <path data-numerodepartement="41" data-nom="Loir-et-Cher"
+                d="m357.9 256.4l-6 3.2-4.2-6.7-2.6 1.3-2.4-1.9 1.2-9.1-3.4-5.1 0.7-2.7-6-3.4-2.2 1.8 0.2-5.5-10.5-0.5 0.6-3.5 3.2-1.1 6.3-10.6-0.4-5.5-1.7-2.2 2-2.1v-0.1l6.3-1.3 12.8 10.8 5.5-3.5 3.3 1.9 2.5 7.1-1.8 3.2 1.7 5.6 3-1.3 2.4 1.5 1.1 3.8 2.9 0.6 1.9-2.3 15.2 1.6 0.8 2.6-5 2.4 5.1 7.6-5.9 4.1 2.1 5.9-9.7 2-0.6 2.8-2.8-0.1-5.2-3.5-6.4 0.9-1.5 2.6z" />
+            <path data-numerodepartement="45" data-nom="Loiret"
+                d="m393.3 189.4l3.7 0.6 0.7 3.1 4.2 4.3-0.6 2.7-2.6 1.5 9.2 0.7 11.2-2.7 6.7 7.5 0.4 5.8-4.6 4.9 1.1 2.9-1.6 2.4-5.3 3.3 3 2.8 2.2 6.9-2.8 0.7-1.5 2.4-9 1.7-3.9-4.8-13.5-3.1-0.8-2.6-15.2-1.6-1.9 2.3-2.9-0.6-1.1-3.8-2.4-1.5-3 1.3-1.7-5.6 1.8-3.2-2.5-7.1-0.2-2.8 6-2.8 8.5-0.6 4.8-10.8 0.5-1.5 6.9-0.7 1.9-2.9 1.5 2.7z" />
+            <path data-numerodepartement="21" data-nom="C¶te-dÆOr"
+                d="m523.6 241.7l3.9 8.2-1.2 1.3-1.8 8.2-6.2 6.8-1.1 4.1v-0.1l-15 1.5-8.8 4.2-5.6-6.3-5.5-1.9-1.3-2.6-5.7-1.7-2.4-2.6v-0.8l0.4-3.2-3.7-1.2-1.3-6h0.1l-1.3-2.7 1.3-8.1 6.7-10.4-1.7-2.3 2.8-2.1 0.3-3.7-3.1-3.9 1.9-3.1 2.2-2 6.1-0.9 4.7-3.9 3.9 0.5 3.5 0.7 0.5 2.7 2.6 1-0.3 2.9 2.9 0.3 1.8 2.2 1 3.1-2.8 2.4 2.3 4.8 9.2 2 3 1.6v2.8l4.8-1.9h0.1l2.7-1.6 2 3 0.1 3.2-4.6 4.1z" />
+            <path data-numerodepartement="25" data-nom="Doubs"
+                d="m590.1 245.2l-2.4 2.2 0.4 3-4.8 6.2-4.8 4-0.4 2.9-2.5 2.7-5.7 1.7-0.3 0.3-1.7 2.3 0.9 2.7-0.7 4.5 0.5 2.5-9.5 8.8-2.9 5.2-0.2 0.7-3.7-3.5 3.6-7.4 2.1-2.3-4.2-4.1-2.9-0.5-5.8-10.1-3 0.8-1.5-2.5-2 2.1-1.2-2.5 3-5.1-5.2-7.8 22.3-10.2 3-4.7 5.6-1.9 2.8 0.9 1.8-2.2 3.2-0.4 0.5-2.8 5.9 0.8 0.2-0.1h0.1l5.9 2.7-1.4 2.5 1.4 2.4 0.4-0.5-0.1 0.2-2.2 4.9 7-0.7z" />
+            <path data-numerodepartement="39" data-nom="Jura" class="wine-region"
+                d="m552.3 291.4l3.7 3.5-2.6 8.1-5.3 7.2-5.5 3.2-3.8 0.2-0.4-2.8-3.4-1.6-4 4.4-2.9 0.1-0.1-3h-2.9l-4.3-7.7 2.8-1.1-0.8-5.3 2.8-5-2.2-8.7-2.5-1.6 5-3.7-8.3-4.4-0.4-2.9 1.1-4.1 6.2-6.8 1.8-8.2 1.2-1.3 2.3 2 5.4 0.1 5.2 7.8-3 5.1 1.2 2.5 2-2.1 1.5 2.5 3-0.8 5.8 10.1 2.9 0.5 4.2 4.1-2.1 2.3z" />
+            <path data-numerodepartement="58" data-nom="NiÞvre"
+                d="m462.8 250l5.5-0.4 1.3 6 3.7 1.2-0.4 3.2v0.8l-1.1 0.3-2.7 0.4v1.3l-2.8 1 0.3 5.9-2.1 1.7 4 7-1.9 2.1 0.7 2.9-11.3 5.7-7-2.8-5.9 6-4.4-3.7-2.8 1.7-6.4-0.2-5.7-6.3 1.3-8.9 0.2-5.8-2.2-2-0.3-5.9-3.1-7.6-2.7-2.1 1.7-5.8-2-6.5 1.5-2.4 2.8-0.7v0.1h3.4l7.4 4.8h6l4.6-4.3 3.9 5.6 5.5 3 5.8-0.9 0.9 3.7 2.8-0.9z" />
+            <path data-numerodepartement="70" data-nom="Haute-Sa¶ne"
+                d="m579.1 225.9l1.4 5.5-0.2 0.1-5.9-0.8-0.5 2.8-3.2 0.4-1.8 2.2-2.8-0.9-5.6 1.9-3 4.7-22.3 10.2-5.4-0.1-2.3-2-3.9-8.2-2.6-1.4 4.6-4.1-0.1-3.2-2-3-2.7 1.6h-0.1l1.2-2.5 6.6-3.9 2.1 1.8 3.2-1 0.3-8.3 2-2.4 2.9 0.3 2.3-3.2-0.2-1.4 8-5.8 7 4.3 5.8-1.6 4.9 3.6 5.1-2.2 8.4 6.6-2.3 5.7z" />
+            <path data-numerodepartement="71" data-nom="Sa¶ne-et-Loire"
+                d="m517.2 270.2v0.1l0.4 2.9 8.3 4.4-5 3.7 2.5 1.6 2.2 8.7-2.8 5 0.8 5.3-2.8 1.1-4.8-3.3-5.4 1.3-5.9-1.5-5.9 20.9-5.7-7.7-1.6 2.3-2.5-1.5-2.2 1.6-2.2-1.7-2.3 1.9-0.3 2.9v0.1l-5.7 3.8-2.1-2.1-8 1.5-5.2-3.3v-3l3.7-4.6 0.5-5.5-1.6-2.4-7.9-2.9-6.7-13.5 7 2.8 11.3-5.7-0.7-2.9 1.9-2.1-4-7 2.1-1.7-0.3-5.9 2.8-1 2.7-1.7 1.1-0.3 2.4 2.6 5.7 1.7 1.3 2.6 5.5 1.9 5.6 6.3 8.8-4.2z" />
+            <path data-numerodepartement="89" data-nom="Yonne"
+                d="m425.8 207.1l-6.7-7.5 3.9-5.4 0.2-5.8 15.4-3 3.6 1.5 4.5 5.5 2.5 8.3 2-2.2 3.6 4.1 5 10.9 12.6-1.6 2.9 1.4-1.9 3.1 3.1 3.9-0.3 3.7-2.8 2.1 1.7 2.3-6.7 10.4-1.3 8.1 1.3 2.7h-0.1l-5.5 0.4-1.5-2.8-2.8 0.9-0.9-3.7-5.8 0.9-5.5-3-3.9-5.6-4.6 4.3h-6l-7.4-4.8h-3.4v-0.1l-2.2-6.9-3-2.8 5.3-3.3 1.6-2.4-1.1-2.9 4.6-4.9z" />
+            <path data-numerodepartement="90" data-nom="Territoire de Belfort"
+                d="m580.3 215.9l0.9-0.6 7.6 5 0.5 9 2.8-0.2 2 5-0.1 0.1-2.8 0.4-1.1-0.4-3.2 4.3-0.4 0.5-1.4-2.4 1.4-2.5-5.9-2.7h-0.1l-1.4-5.5-1.1-4.3z" />
+            <path data-numerodepartement="14" data-nom="Calvados"
+                d="m316.9 148l-0.7 2.2-5.6-1-7 1.7-7.2 5.4-2.9 0.3-5.7-1.1-2.6 1.7-4.9-3-6.4 2.3-2.7-1.3-0.9 2.7-5.4 2.9-9.7-2.1-1.8-2.4 4.5-5.3-1.6-2.3 8.1-4.9-2.2-8.2 2-2.6-8.4-3.1-0.5-6.6v-0.1l0.1-0.7 1.8 0.8 1.9-2.1 3.4-0.3 9.4 3.3 13.9 1.5 6.9 3.4 5.7-0.7 4.7-2.5 4.1-3.7 5.1-1.1 0.3 8.3h2.9l-2.3 2.1 2.8 9.4-1.4 3z" />
+            <path data-numerodepartement="27" data-nom="Eure"
+                d="m316.4 153.4l-0.2-3.2 0.7-2.2-2.3-4.1 1.4-3-2.8-9.4 2.3-2.1h-2.9l-0.3-8.3 1.7-0.4 0.3-0.1h1.5l-0.9-0.2 0.8-0.3-1.3-0.3 5.9-2.4 7.6 5 3.4-0.7 4.9 3-1.9 2.4 2.1 2.1 5.4 2.4 1.4-2.7 8.2-2.5 4.8-7 13.1 3.3 3.5 8.4-4 2.6-4 9.5-3.8-0.1-2.3 2.6 1.8 5.8-6 6.9 0.2 2.8-6 1.3-2.8-1.6-5.3 3.2-6 1.1-2.4 2.6-3.4-2.1 1.7-2.3-7.8-9.5z" />
+            <path data-numerodepartement="50" data-nom="Manche"
+                d="m255.2 158.7l9.7 2.1 4.1 4.2-1.8 6.7-3.6 4.5h-0.1l-8.6-0.8-5.4-2.3-7.1 4.8-2.7-1-4.7-9.6 1.9-0.2 4.8 0.4 2.5-1.1 0.5-2.2-2.4 1.3-5.1-5.6-0.3-5.3 2-6.1-0.3-4.9-1.8-3.6 0.4-7.4 1.5-2-2.5 0.3-2-5 0.3-2.2-2.4-1.2-2.9-4.1-0.7-5.9-1.4-1.9 1.8-1.8 0.1-2.8-0.5-2.3-2.2-1.1-1-2.5 2.1-0.2 11.9 4.2h2.4l4-2.6 5.1 0.6 1.8 1.7 0.9 2.7-3.2 5.2 4 6.5 1.1 4.3-0.1 0.7v0.1l0.5 6.6 8.4 3.1-2 2.6 2.2 8.2-8.1 4.9 1.6 2.3-4.5 5.3z" />
+            <path data-numerodepartement="61" data-nom="Orne"
+                d="m266.9 179.9l-3.3-3.7 3.6-4.5 1.8-6.7-4.1-4.2 5.4-2.9 0.9-2.7 2.7 1.3 6.4-2.3 4.9 3 2.6-1.7 5.7 1.1 2.9-0.3 7.2-5.4 7-1.7 5.6 1 0.2 3.2 6.3 0.5 7.8 9.5-1.7 2.3 3.4 2.1 0.1 3.2 4.8 4.4-0.2 4.5 0.5 4.6-7.5 5.1 1.1 7.5-3.2-0.7-3.1-3.5-2.9 1-7.2-5-1.6-8.4-2.8-1.5-11 5.9-3-0.1v-0.1-2.9l-3.3-1.6-1.9-6-2.7-0.2-0.7 2.7h-9.1l-6.7 3.3-2.5-1.7z" />
+            <path data-numerodepartement="76" data-nom="Seine-Maritime"
+                d="m314.4 119.8l-7.6-1.8-1.2-2-0.1-2.3 4.4-9.7 13.8-7.4 2.3-1.6 10.3-2.1 4.8-1.8 2.4 0.3 8.5-4.4 5.1-4.1 11.8 10 3.4 8.4-3.1 4.7 1.4 8.7-1.3 8-13.1-3.3-4.8 7-8.2 2.5-1.4 2.7-5.4-2.4-2.1-2.1 1.9-2.4-4.9-3-3.4 0.7-7.6-5z" />
+            <path data-numerodepartement="02" data-nom="Aisne"
+                d="m450.3 82.6l16.7 4.6 2.9 0.9 0.7 5.9-1.3 3.5 1.3 3.1-5 7.2-2.7 0.3 0.3 14.3-1 2.8-5.3-1.8-8 4-1.2 2.6 3.2 8-5.5 2.3 1.6 2.4-0.8 2.7 2.5 1.3-7.7 10.2-9.3-6-3.9-4.2 0.7-2.8-1.8-2.5-2.6-0.7 2.1-1.7-0.5-2.8-2.9-1.1-2.4 1.5-0.7-2.9 3 0.2-2.9-4.5 2.6-1.7 2.4-5.7 2.6-1.1-2.2-1.8 0.8-4.5-0.4-10.2-2.3-7 3.9-8.1 0.4-3.8 12.6-0.6 2.6-2.2 2.3 1.7z" />
+            <path data-numerodepartement="59" data-nom="Nord"
+                d="m384.3 25.1l0.9-0.3 2 0.8 1.1-2.1 7.9-2.1 2.9 0.3 4.4-1.9v-0.1l1.2 4.8 2.3 3.7-1.6 1.9 0.6 0.8 1.2 5.8h3.4l2.7 5.1 3.1 1.5h2.1l0.6-2.4 8.1-3 3.8 7.5 0.1 1 1.3 5.2 2 3.5h0.1l2.8 0.6 2.1-1.4 2.4-0.2-0.5 2.2 2.2-0.7 2.8 1 1.8 4.4-0.6 2.3 0.7 2.3 1.4 1.9 1.1-2.6 4.6-0.3 2.4 1.1 4.3-1.7 5.5 6 2.3 0.2-2.1 2.4-1.4 4.7 2.6 0.2 1.4 3.3-3.5 3.9 0.2 2.5-16.7-4.6-5.2 1.8-2.3-1.7-2.6 2.2-12.6 0.6-3.3-2.6 3.5-10.6-1.8-2.4-3-0.4 0.7-2.7-3.9-5.2 3.1-1.6-3.8-5.3-5.9-1 1-6.1-1.3-2.5-1.7 2.2-11.6-0.5-4.1-4.2 0.6-2.8-5.5-2.6z" />
+            <path data-numerodepartement="60" data-nom="Oise"
+                d="m372.8 131.1l-3.5-8.4 1.3-8-1.4-8.7 3.1-4.7 4.1 3.7 3.1-1.2 14.4 2.2 12.8 6.7 8.6-6.8 10.3-1.5 0.4 10.2-0.8 4.5 2.2 1.8-2.6 1.1-2.4 5.7-2.6 1.7 2.9 4.5-3-0.2 0.7 2.9 2.4-1.5 2.9 1.1 0.5 2.8-2.1 1.7-8.1 2.9-2.5-1.6-2 2.2-6.9-1-10.9-6.4-2.2 1.6-9.2-2.2-6.3 1.8-5.6-1.1-1.6-3.2z" />
+            <path data-numerodepartement="62" data-nom="Pas-de-Calais"
+                d="m379.8 68.9l7.1 5.8 12-2.5-2.6 5.7 1.7 3.1 2.5-3.1 8.4 3.5 0.8-2.8 2.8 4.6 2.4-1.7 0.8 3.2 8.6-1.8 3.5-10.6-1.8-2.4-3-0.4 0.7-2.7-3.9-5.2 3.1-1.6-3.8-5.3-5.9-1 1-6.1-1.3-2.5-1.7 2.2-11.6-0.5-4.1-4.2 0.6-2.8-5.5-2.6-6.3-12.1-11.7 3.4-6.4 5.4 0.9 5.6-1.7 4.6 0.6 6.7 2 4.2-1.7-1.4-0.3 9.7 2.3 1.6 10.5 1z" />
+            <path data-numerodepartement="80" data-nom="Somme"
+                d="m424.3 82.9l3.3 2.6-0.4 3.8-3.9 8.1 2.3 7-10.3 1.5-8.6 6.8-12.8-6.7-14.4-2.2-3.1 1.2-4.1-3.7-3.4-8.4-11.8-10 2.4-1.9 3.4-6.6 1.9-1.1 0.1-0.1 1.4 1.8 3.5 0.3-5.6-6 1.2-5.1 2.9 0.7 10.5 1 1 3 7.1 5.8 12-2.5-2.6 5.7 1.7 3.1 2.5-3.1 8.4 3.5 0.8-2.8 2.8 4.6 2.4-1.7 0.8 3.2z" />
+            <path data-numerodepartement="08" data-nom="Ardennes"
+                d="m469.9 88.1l0.8 0.3 9.8 0.4 7.3-3.2 1.1-6 4-3.8 2.8-0.2v3.8l-1.7 1.6-0.6 5.2 3.3 4.5-1 2.4 0.6 3.1 1.4 1.9 3.3-0.9 4.3 2.4 2.8 3.8 4.9 0.6 2 1.7-0.9 2.4 2.1-0.1-1.6 1.1-2 2.7-5.7-2.1-1.9 2 0.8 8.8-3.2 5.1 1.4 2.5-4.2 3.6v0.1l-20.1-1.9-9.8-6.6-6.7-0.9-0.3-14.3 2.7-0.3 5-7.2-1.3-3.1 1.3-3.5z" />
+            <path data-numerodepartement="10" data-nom="Aube"
+                d="m442.2 186.9l-3.6-1.5-0.4-8.5 2.9-0.8 3-5 3.2 4.5 9 1.2v-3.3l9.5-7.6 6.5-0.9 3.1 0.5 0.4 6.1 2.6 2c1.9 0.8 3.8 1.5 5.6 2.3l2.5-1.5 3.3 1.1-0.6 3.4 2.4 5.2 5.6 3 0.5 9.9-0.1 2.7-5.6 2.5 0.2 4.8-3.9-0.5-4.7 3.9-6.1 0.9-2.2 2-2.9-1.4-12.6 1.6-5-10.9-3.6-4.1-2 2.2-2.5-8.3z" />
+            <path data-numerodepartement="51" data-nom="Marne" class="wine-region"
+                d="m440.6 158.9l0.4-2 7.7-10.2-2.5-1.3 0.8-2.7-1.6-2.4 5.5-2.3-3.2-8 1.2-2.6 8-4 5.3 1.8 1-2.8 6.7 0.9 9.8 6.6 20.1 1.9 2.2 9-1 4.1 2.6 1.3-0.6 3.9-3.1 1.1-1.1 5.8 3.2 4.6 0.5 4.1-8.6 2.2 2.2 2.5-2.3 2.2 0.7 2.9h-4.7l-3.3-1.1-2.5 1.5c-1.8-0.8-3.7-1.5-5.6-2.3l-2.6-2-0.4-6.1-3.1-0.5-6.5 0.9-9.5 7.6v3.3l-9-1.2-3.2-4.5-2.6-1.7-3.5-8.3z" />
+            <path data-numerodepartement="52" data-nom="Haute-Marne"
+                d="m493.9 167.9l8.6-2.2 3.4 5.2 16.9 10.4-2.4 2.3 12.7 9.5-1.7 8.6 5.5 4.7 0.2 3.1 2.7-1.1 1.3 2.5v0.1l0.2 1.4-2.3 3.2-2.9-0.3-2 2.4-0.3 8.3-3.2 1-2.1-1.8-6.6 3.9-1.2 2.5-4.8 1.9v-2.8l-3-1.6-9.2-2-2.3-4.8 2.8-2.4-1-3.1-1.8-2.2-2.9-0.3 0.3-2.9-2.6-1-0.5-2.7-3.5-0.7-0.2-4.8 5.6-2.5 0.1-2.7-0.5-9.9-5.6-3-2.4-5.2 0.6-3.4h4.7l-0.7-2.9 2.3-2.2z" />
+            <path data-numerodepartement="54" data-nom="Meurthe-et-Moselle"
+                d="m588.2 170.9l1.9 1.3-1.5 0.4-10.6 7.6-6.1-1.6-1.6-2.7-5.3 3.8-6 1-2.4-1.8-5.4 2-1.1 2.8-5.7 0.7-4.1-4.8 0.1-2.9-5.8-0.6 0.2-2.9-2.5-2 1.7-2.8-1.3-8.6 2.2-13.8 0.9-2.7-4.9-11.5 1.5-5.9-1.2-2.7-4.4-4.8-5.3 2-0.7-5.3 4.8-1.7 2-1.9h6.8l2.5 2.3 2.7 10.2 2.5 1.6 1.2 3.6-1.7 3.1 1 5.6-2.8 0.1 4.3 7.5 11.5 4-0.3 2.9 2.7 5.1 8.5 1.5 5.3 3.9 14.4 5.3z" />
+            <path data-numerodepartement="55" data-nom="Meuse"
+                d="m516.2 108l1.2-0.1 1.5 1.6 1.9 5.6 0.7 5.3 5.3-2 4.4 4.8 1.2 2.7-1.5 5.9 4.9 11.5-0.9 2.7-2.2 13.8 1.3 8.6-1.7 2.8 2.5 2-0.2 2.9-1.9 2.3-3-0.5-6.9 3.4-16.9-10.4-3.4-5.2-0.5-4.1-3.2-4.6 1.1-5.8 3.1-1.1 0.6-3.9-2.6-1.3 1-4.1-2.2-9v-0.1l4.2-3.6-1.4-2.5 3.2-5.1-0.8-8.8 1.9-2 5.7 2.1 2-2.7z" />
+            <path data-numerodepartement="57" data-nom="Moselle"
+                d="m539.6 124l-2.6-10.2 0.6 0.6h2.4l1.5 2.1 2.3 0.7 2.3-0.5 1-2.3 2-1.2 2.2-0.2 4.5 2.3 4.9-0.1 3.1 3.8 2.3 1.9-0.5 2 3.7 3.2 2.8 4.5v2.3l4.2 0.7 1.2-1.9-0.3-2.4 2.6-0.2 3.8 1.8 1.4 3.5 2.1-1.5 2.5 1.9 5.8-0.4 5.3-4.2 2.2 1.4 0.5 2.1 2.4 2.4 3.2 1.5-1.7 4.4-1.4 2.6-8.9 0.3-9.1-4.6-0.8-2.8-5 10.8 5.5 2.4-1.6 2.5 2.3 1.7 1.3-2.5 3 0.3 4.3 3.4-3 13.3-2.3 1.8-3.4-0.3-2-2.7-14.4-5.3-5.3-3.9-8.5-1.5-2.7-5.1 0.3-2.9-11.5-4-4.3-7.5 2.8-0.1-1-5.6 1.7-3.1-1.2-3.6z" />
+            <path data-numerodepartement="67" data-nom="Bas-Rhin"
+                d="m631.8 140.7l-2.8 9.4-7.8 10.5-2 1.5-1.4 3.3 0.3 4.9-2.4 7.2 0.7 3.6-1.5 2-1.2 5.5-3.2 6.2-4.6-1.8-0.3-2.8-8.5-5.6-3.1-0.2-5.2-2.2 1.3-10-1.9-1.3 3.4 0.3 2.3-1.8 3-13.3-4.3-3.4-3-0.3-1.3 2.5-2.3-1.7 1.6-2.5-5.5-2.4 5-10.8 0.8 2.8 9.1 4.6 8.9-0.3 1.4-2.6 1.7-4.4 8.9 0.6 2.4-0.6z" />
+            <path data-numerodepartement="68" data-nom="Haut-Rhin"
+                d="m605.9 193l4.6 1.8v0.1 5.3l1.6 1.9 0.2 3.4-2.2 11.1 0.1 6.7 1.8 1.5 0.6 3.5-2.2 2-0.2 2.3-3.1 0.9 0.5 2.2-1.5 1.6h-2.7l-3.8 1.4-3-1.1 0.3-2.5-2.4-1.1-0.4 0.1-2-5-2.8 0.2-0.5-9-7.6-5 2.8-2.4v-6.2l4.8-7.8 4.1-13.5 1.1-1 3.1 0.2 8.5 5.6z" />
+            <path data-numerodepartement="88" data-nom="Vosges"
+                d="m520.4 183.6l2.4-2.3 6.9-3.4 3 0.5 1.9-2.3 5.8 0.6-0.1 2.9 4.1 4.8 5.7-0.7 1.1-2.8 5.4-2 2.4 1.8 6-1 5.3-3.8 1.6 2.7 6.1 1.6 10.6-7.6 1.5-0.4-1.3 10 5.2 2.2-1.1 1-4.1 13.5-4.8 7.8v6.2l-2.8 2.4-0.9 0.6-8.4-6.6-5.1 2.2-4.9-3.6-5.8 1.6-7-4.3-8 5.8v-0.1l-1.3-2.5-2.7 1.1-0.2-3.1-5.5-4.7 1.7-8.6z" />
+            <path data-numerodepartement="44" data-nom="Loire-Atlantique" class="wine-region"
+                d="m213.1 265.2l1.8-1-2.8-4.1-7.8-3 3-1.3 0.6-2.2-0.5-2.5 1.4-2.1 5.8-1.1-5.5-0.7-6.6 3.7-4.1-3.2-2.2 1-2.2-1.2-0.5-4.9 0.9-2.5 3-0.5-0.9-2.2-0.2-0.3 13.2-3.9 0.4-6 5.2-3.4 13.2-0.4 1.6-2.9 9-3.9 6.8 3.6 7.2 13.3-2.7-0.4-1.9 2.4 8.5 3.3 0.3 5.9-14.3 2.1-2.9 2.2 3 0.8 3.6 4.7 0.8 2.8-2.8 4.5 2.8 1.4 0.4 3-4.8-3.5-1.5 2.4-3.2 0.7 0.5 3-2.4 2.1-2.3-1.7v-3.1l-3.4 0.2-0.2 9.5-11.7-5z" />
+            <path data-numerodepartement="49" data-nom="Maine-et-Loire" class="wine-region"
+                d="m270.6 269.2l-12.3 0.8-10.6-3.8-0.4-3-2.8-1.4 2.8-4.5-0.8-2.8-3.6-4.7-3-0.8 2.9-2.2 14.3-2.1-0.3-5.9-8.5-3.3 1.9-2.4 2.7 0.4-7.2-13.3 0.4-2.2 10.5 3.5 2.1-1.9 8.7 3.6 3 0.4 5.9-2.7 5.1 1.7 0.6 2.7 6.7-0.2 0.2 3.5 2 2 3.1-1.3 5.2 3.3 7.4 0.1-0.7 2.4-1.7 9.3-5.8 15.3v0.1l-6.6 5.9-2.3-2.3-9.6 0.2-5.6 0.8z" />
+            <path data-numerodepartement="53" data-nom="Mayenne"
+                d="m256.6 221.5l-10.5-3.5 3.6-8.6 5.5-2.2-1.9-17.3 1.5-2.4 0.1-12.1 8.6 0.8h0.1l3.3 3.7 2.4-1.6 2.5 1.7 6.7-3.3h9.1l0.7-2.7 2.7 0.2 1.9 6 3.3 1.6v2.9 0.1l-4.3 2.7 0.3 6.9-4.4 4 1.2 2.9-5 4.6 1.4 3.4-5.5 7.7 1.5 5.6-5.1-1.7-5.9 2.7-3-0.4-8.7-3.6z" />
+            <path data-numerodepartement="72" data-nom="Sarthe"
+                d="m312.7 235.3l-6.1-2.6-7.4-0.1-5.2-3.3-3.1 1.3-2-2-0.2-3.5-6.7 0.2-0.6-2.7-1.5-5.6 5.5-7.7-1.4-3.4 5-4.6-1.2-2.9 4.4-4-0.3-6.9 4.3-2.7 3 0.1 11-5.9 2.8 1.5 1.6 8.4 7.2 5 2.9-1 3.1 3.5 3.2 0.7 2.1 3.8-0.4 1.8v0.1l-2 2.1 1.7 2.2 0.4 5.5-6.3 10.6-3.2 1.1-0.6 3.5-7.7 4.5-2.8-0.3z" />
+            <path data-numerodepartement="85" data-nom="VendÚe"
+                d="m269.3 305.1l0.2-7.4-4.7-17.9-4.2-4.1-2.3-5.7-10.6-3.8-4.8-3.5-1.5 2.4-3.2 0.7 0.5 3-2.4 2.1-2.3-1.7v-3.1l-3.4 0.2-0.2 9.5-11.7-5-5.6-5.6-0.3 0.1-0.8 2.6-3.4 4.3-1.2 2.3 0.2 2.4 8.7 9.5 2.7 5.6 1.2 5.3 8 5.4 3.4 0.5 3.9 4.3 2.9-0.1 2 1.2 1.8 2.5-0.9-2.1 3.9 3.3 0.5-2.7 2.4 0.3 7.1-2.7-1.4 2.9 6.5-0.3 2.4 1.8 9.1-4.5z" />
+            <path data-numerodepartement="22" data-nom="C¶tes-dÆArmor"
+                d="m208.7 188.9l-4.9 7.1-2.9 1.1-1.5-2.7-3.5-0.9-6.2 7.5-1.8-6-3 0.9-12.9-6.5-7.9 3-12.5-3.3 2.1-4.1-2.5-9.3 2.5-8.3-3.6-4.7 1.1-4.3 1.2 1.4 3.2-0.4 1.1-7.7 1.5-1.6 2.2-0.6 1.9 1.4h2.5l2.1-1 2.2 0.3 1.5-1.8 0.9 2-1.5 2.6 3-3.6 2.9-0.8-0.1 2.3-1.2 4.4 1.7-3.1 2.6-0.5-1.1 2 7.2 7.8 2.2 5.4 3 2 0.8 3.7 0.7-2.2 3-1 2.4-2.7 8.1-3.3 2.7-0.2-2 2.5 2.9-1.1 1.8 4.4 1.3-1.9 2.5 0.2v-0.1l1.6 4h-0.3 0.3l2.5 0.3 0.7 0.2 0.4 1.7-1.9 13z" />
+            <path data-numerodepartement="29" data-nom="FinistÞre"
+                d="m151.6 210.1l2 3.4-0.8 1.4-5.5-1.2-1.2-1.9 2.2-0.7-3 0.8-0.3-2.7v2.7l-2.5 0.7-2.2-1-4.2-6.1-0.8 2.5-2.3 0.2-3.5-3.1 1.6-4.6-2.4 4.3 1.3 1.9-2.2 1-1 2.8-5.9-0.2-2.1-1.6 1.5-1.6-1.5-5.5-2.4-3.1-2.8-1.8 1.6-1.7-2.1 1.4-7.5-2.2 2.2-1.3 12.5-1.8 1.8 1.8 2-1.3 0.7-2.5-1.6-3.6-6.8-2.5-1.5 2.6-2.6-4.2 1.3-1.8-0.3-2.2 1.7 2.3 4.9 1 4.6-0.8 2.1 3.1 5.4 1-3.7-0.9-2.8-2 2.2-0.5-4.2-2 2-1.5-2.6-0.2-2.7 0.8-0.8-2.2 7.1-4.5-4.4 2.2-2.3 0.1-7.5 2.9-2.7-1.2-2.7 1.2-1.5-1.8 0.6-5.3 2.5-1.6-2.2-0.9 0.8-2.6 1.8-1.6 2.1-0.8 5.1 1.5-1.9-1.1 2.5-1.2 1.6 1.4-1.9-1.7 1.2-1.9 2.9-0.1 3.8-2 2.3 2.6 6.7-3.1 3 1.6 1-2.2 2.9-0.5 0.4 5 2.2-1.5 1.3 2.5 1.2-4.5 4.7 0.3 1.2 1.7-1.1 4.3 3.6 4.7-2.5 8.3 2.5 9.3-2.1 4.1v0.1l-6.8 3.2 0.5 3.5 3.4 5.5 8.1 1.3 0.1 5.4-2.5 2.8z" />
+            <path data-numerodepartement="35" data-nom="Ille-et-Vilaine"
+                d="m255.2 207.2l-5.5 2.2-3.6 8.6-0.4 2.2-6.8-3.6-9 3.9-1.6 2.9-13.2 0.4-5.2 3.4-1-5.8 3-0.7-2.8-1.5 2.4-2.2 1-3.2-2.4-1.7 1.6-2.6-1.2-2.5-5.1-2.8-0.5-2.8 3.5-0.9-3.6-0.1-1-4.4 4.9-7.1 9-2.5 1.9-13-0.4-1.7-0.7-0.2-2.5-0.3-1.6-4 0.1-0.8v-0.9l0.7-0.1h2.1v0.1l1.7 4.4 1.3 2-0.5 2.1 1.4-2.1-2.3-5.1 0.7-2.5 2.2-1.5 2.3-0.6 2.2 1-1.5 2.3 2.9 2.4 7.3-0.6 4.7 9.6 2.7 1 7.1-4.8 5.4 2.3-0.1 12.1-1.5 2.4z" />
+            <path data-numerodepartement="56" data-nom="Morbihan"
+                d="m167.7 242.6l2.9 1.2-1.1 2.1-5.1-1.2-1.3-2.7 0.4-3 2.1 1.4zm41.4-23.4l2.4-2.2 1-3.2-2.4-1.7 1.6-2.6-1.2-2.5-5.1-2.8-0.5-2.8 3.5-0.9-3.6-0.1-1-4.4-2.9 1.1-1.5-2.7-3.5-0.9-6.2 7.5-1.8-6-3 0.9-12.9-6.5-7.9 3-12.5-3.3v0.1l-6.8 3.2 0.5 3.5 3.4 5.5 8.1 1.3 0.1 5.4-2.5 2.8-2.8-0.8 2 3.4 0.1 1.5 2.9 4.4 2.3-0.2 1.5-1.7-0.8-5.1 0.6 2.4 1.7 1.7 1.9-1.7-2.5 4.2 2.2 1.4-2.3-0.6 3.2 1.9 0.1 0.1 1.6 1 1.7-2.5-1.6 3.1 2.1 2.6 0.6 3.5-0.9 2.8 2.1 1.1-1.2-3 0.5-3.8 2.2 1.6 5.1 0.1-0.7-5 1.4 2 2.1 1.5 4.8-0.5 2.1 2.4-1 2.2-2.1-0.6-4.8 0.4 3.8 3.3 12.9-0.9 3.1 1.5-3.4 0.1 1.4 2.4 13.2-3.9 0.4-6-1-5.8 3-0.7z" />
+            <path data-numerodepartement="16" data-nom="Charente"
+                d="m294.8 379.2l-2 2v-0.1l-6.3-6.3-6-1.2 1.7-3-2.3-2 2.4-1.7-1.5-2.6 1.7-2.6-2.4-1.7-0.3-3-5-3.1 2.2-2.1-3.2-5.6 8.1-3.3 2.3 2 2.7-0.1 2.7-11.6 2.7-1.6 0.3-3 5.8-2.5 3.5 0.4 0.8-0.8h0.1l9.1 3 2.9-0.8-1.4-2.4 2.2-1.8 4.1 3.9 3.8-1.4 1.3-2.5 4.8 0.6-0.2 5.1 4.7 3.6-0.6 3.2-2.6 1.1-4 8-2.8 0.6-3.4 3.8h0.1l-5.7 6.1-2.1 5.3-7.9 5.9-0.7 5.7-4.1 5.8z" />
+            <path data-numerodepartement="17" data-nom="Charente-Maritime"
+                d="m242.8 341.1l-1.4-5-3.5-3-1.3-2.3 1.5-3.6 1.7 1.8 2.9 0.5 1.4 8.4zm-0.9-22.2l-5.8-4.5-4.4-1.5-0.6 2.9 2.7 0.1 4.8 3.3zm44.6 55.9l-6-1.2 1.7-3-2.3-2 2.4-1.7-1.5-2.6 1.7-2.6-2.4-1.7-0.3-3-5-3.1 2.2-2.1-3.2-5.6 8.1-3.3 2.3 2 2.7-0.1 2.7-11.6-3.6-4.7-17.4-6.7-5.9-6.5v-3.7l-2.4-1.8-6.5 0.3 1.4-2.9-7.1 2.7 0.5 0.1-0.6 3.4-4.5 5.9 2.4 0.3 2.2 1.7 3 7.2-1.5 1.9-0.2 5.1-3.3 3.1-0.1 2.6-2.2 0.4-1.5 1.7 1.1 4.3 9 6.5 1.5 2.6 4.3 2.7 3.7 4.8 1.8 7.3 3.8-0.5 0.7 2.8 6.4 1.7 0.6 5.8 6.1 4.3 9.4 1 2-5 0.1-0.4v-0.1z" />
+            <path data-numerodepartement="19" data-nom="CorrÞze"
+                d="m363.6 392.3l-8.1 0.8-3.5-7-3.2-0.7-0.2-3-2.3-1.5 2-1.8-1.7-3 3.6-4.6-2.9-4.7 1.6-2.7 2.5 1.2 4.7-4 5.7-1.3 4.9-4.6 8.7-4 7-3.4 11.2 5.2 2.3-2.6 2.7 0.8 2.4-2.4 1.2 5.6-1.7 2.4 1.2 7.9 0.7 6-6.2-2-0.6 3.5-7.6 9.5 1.8 2.2-2.3 1.9-0.3 3.5-3.1 1.1 1.5 3.4-3.2 1.9h-0.1l-6.7-0.2-5.3 2.7z" />
+            <path data-numerodepartement="23" data-nom="Creuse"
+                d="m396.6 343.5l4.4 5.5-2.4 2.4-2.7-0.8-2.3 2.6-11.2-5.2-7 3.4-0.6-5.9-4.7-3-6.4-0.5-0.1-2.8-2.9-1.5 0.9-3.4-1.8-5.2-6.6-9.8 3-5.3-1.2-2.6 2.8-2.9 11.5-1.1 1.9-2.5 13.2 2.7 2.7-0.8 4.9 0.2 1.1 3.9c2.5 1.6 4.9 3.2 7.4 4.8l3.6 8.4-0.5 4.1 2.3 6.7z" />
+            <path data-numerodepartement="24" data-nom="Dordogne"
+                d="m307.7 414.3l-2.8-6.4-1-1.3 0.9-2.9-2.4-2.6-2 3.2-9.8-2.3 2-2 0.2-5.7 2.8-5.5-1.2-2.8-3.7 0.6 2-5 0.1-0.4 2-2 5.5-0.7 4.1-5.8 0.7-5.7 7.9-5.9 2.1-5.3 5.7-6.1 6.2 3-0.1 4.7 9.5-1.1 7.2 5.6-2 2.7 5.7 2.2 2.9 4.7-3.6 4.6 1.7 3-2 1.8 2.3 1.5 0.2 3 3.2 0.7 3.5 7-0.7 5-1.4 5.3-4.5 3.2 0.6 3.6-6 3.4-4.7 6.5-4.2-4.2-5.4 2.7-1.5-6-6.1 1-2.2-1.8-2.8 2z" />
+            <path data-numerodepartement="33" data-nom="Gironde" class="wine-region"
+                d="m243.9 420.1l-5.8 2.6v-4.6l2.2-3.2 0.5-2.3 1.9-1.7 1.8 1.4 3.1-0.2-1.1-4.6-3.5-3.4-2.8 4-1.2 3.8 6.2-50 0.9-2.8 3.3-3.4 1.4 4.7 9 9 2.8 7.6 1.7-3.1-0.6-2.4 3.8-0.5 0.7 2.8 6.4 1.7 0.6 5.8 6.1 4.3 9.4 1 3.7-0.6 1.2 2.8-2.8 5.5-0.2 5.7-2 2 9.8 2.3 2-3.2 2.4 2.6-0.9 2.9 1 1.3-3.1-0.1-1.2 2.5-2.7-0.9-1.1 3.3 2.9 1.4-8.5 8.6-0.6 8.9-3 2.3 1.5 2.5-4.5 4-2.1-2.7-1.6 3.6h-6.4l-0.6-4.7-11-7.7 0.4-2.8-17.2 0.7 1.5-5.4z" />
+            <path data-numerodepartement="40" data-nom="Landes"
+                d="m222.3 481.2l1.1-1.5 3.9-7.1 8.8-37.8 2-11.7v-0.4l5.8-2.6 3.7 1.3-1.5 5.4 17.2-0.7-0.4 2.8 11 7.7 0.6 4.7h6.4l1.6-3.6 2.1 2.7 0.4 4.6 11.7 2.9-3.6 5.2 0.7 2.6-0.4 2.9-2.5 1.3-0.6-3-9.4 2.7 0.5 6.4-4.2 11.1 1.6 2.7-8.6 1.5-3.3-1.1-4.8 1.9-2.2-2-2.3 1.5-2.5-2.3-9.8 2-1.6 2.2-2.5-1.4-2.7 1.3-1.2-2.8-11 2.5z" />
+            <path data-numerodepartement="47" data-nom="Lot-et-Garonne"
+                d="m293.8 455.6v0.1l-0.7-2.6 3.6-5.2-11.7-2.9-0.4-4.6 4.5-4-1.5-2.5 3-2.3 0.6-8.9 8.5-8.6-2.9-1.4 1.1-3.3 2.7 0.9 1.2-2.5 3.1 0.1 2.8 6.4 8.9-0.5 2.8-2 2.2 1.8 6.1-1 1.5 6 5.4-2.7 4.2 4.2-3.4 3.1 2.7 9.1-7.5 2v2.9l2.4 1.4-4.4 5.5 1.3 2.7-2.8-0.2-3.6 4.7-2.7 1.3-8.6-1-5 2.9-8.3-0.7-1.4 2.5z" />
+            <path data-numerodepartement="64" data-nom="PyrÚnÚes-Atlantiques"
+                d="m276.9 513.4l3.4-0.8-0.4-2.9 8-9.3-0.8-3.1 2.7-1.4-0.5-7.2h-2.9l1.5-2.8-2.5-5.8-6.6-0.3-8.6 1.5-3.3-1.1-4.8 1.9-2.2-2-2.3 1.5-2.5-2.3-9.8 2-1.6 2.2-2.5-1.4-2.7 1.3-1.2-2.8-11 2.5-4-1.9-3.5 4.9-2.7 1.9-4.5 0.9 1.9 4.5 4.5-0.2 0.2 2.2 2.4 1 2.2-2.1 2.4 1.3 2.5 0.1 1.4 2.8-2.5 6.7-2.1 2.2 1.3 2.2 4.3-0.1 0.7-3.4 2.3-0.1-1.3 2.4 5.9 2.3 1.5 1.8h2.5l6.1 3.8 5.8 0.4 2.3-1 1.4 2.1 0.3 2.8 2.7 1.3 3.9 4 2.1 0.9 1.1-2.1 2.7 2.1 3.6-1.1 0.2-0.2 1.4-9.3z" />
+            <path data-numerodepartement="79" data-nom="Deux-SÞvres"
+                d="m292.3 331.6l-2.7 1.6-3.6-4.7-17.4-6.7-5.9-6.5v-3.7l9.1-4.5-2.5-2 0.2-7.4-4.7-17.9-4.2-4.1-2.3-5.7 12.3-0.8 3.7-4.8 5.6-0.8 9.6-0.2 2.3 2.3 3.4 9-0.8 3 2.7 1.2-4.5 14.1 2.7-0.9 1.5 3-3.4 5.5 0.5 5.8 2.1 2-0.1 2.8 6.4 0.2-3.2 8.5 4.5 3-0.8 2.8h-0.1l-0.8 0.8-3.5-0.4-5.8 2.5z" />
+            <path data-numerodepartement="86" data-nom="Vienne"
+                d="m329.6 320.8v3.5l-4.8-0.6-1.3 2.5-3.8 1.4-4.1-3.9-2.2 1.8 1.4 2.4-2.9 0.8-9.1-3 0.8-2.8-4.5-3 3.2-8.5-6.4-0.2 0.1-2.8-2.1-2-0.5-5.8 3.4-5.5-1.5-3-2.7 0.9 4.5-14.1-2.7-1.2 0.8-3-3.4-9 6.6-5.9 5.5 3.2 0.3 3.2 2.9-0.3 1.3 6.1 2.8 1.4 10-0.4-1.4-2.9 5.3 3 0.3 3.1 7.1 10 2.1 3-0.8 5.8 4.6 4.4h2.9l2.6 5.4 2.5 1.3-1.5 2.8-0.8-0.3-1.3 2.4-3.3-0.9-1.3 3-5.6 2.7z" />
+            <path data-numerodepartement="87" data-nom="Haute-Vienne"
+                d="m348.9 364.1l-1.6 2.7-5.7-2.2 2-2.7-7.2-5.6-9.5 1.1 0.1-4.7-6.2-3h-0.1l3.4-3.8 2.8-0.6 4-8 2.6-1.1 0.6-3.2-4.7-3.6 0.2-5.1v-3.5l3-5 5.6-2.7 1.3-3 3.3 0.9 1.3-2.4 0.8 0.3 2.6 1.1 5.8-1.1 1.7 2.5 1.2 2.6-3 5.3 6.6 9.8 1.8 5.2-0.9 3.4 2.9 1.5 0.1 2.8 6.4 0.5 4.7 3 0.6 5.9-8.7 4-4.9 4.6-5.7 1.3-4.7 4z" />
+            <path data-numerodepartement="09" data-nom="AriÞge"
+                d="m369.8 543.6l0.8-0.9-2.6-1.1-2-2.1-3.7-0.1-1.7-1.7-2.8 0.4-1.3 2.1-2.4-0.8-2.8-5.9-10-0.6-1.3-2.8-13.2-3.9-0.5-1.4 3.8-5.2 2.8-1v-5.9l3.9-4 2.8-1.1 6.2 4.1-0.4-5.6 5.4-1.6-3-4.8 2.8-1.1 3.4 5.5 2.8-0.5 0.6-2.8 5.7 2.2 2-2.3 2.2 5.5 8.7 3.9 2.2 5.2 0.2 3.1-2.2 2.3 2.4 2.5-1.2 3-3.2 0.6 0.8 5.7 3.4 1.5 3.3-1.2 4.8 5.6-7.4 0.2-1.3 2.6z" />
+            <path data-numerodepartement="11" data-nom="Aude"
+                d="m435.1 504.4l-1.5 1.5-5.2 9.3-0.9 3.5 0.1 9.6-9.4-5.6-8.2 5.4-13.6-1-2.7 1.4 1.4 6-8.6 3.9-4.8-5.6-3.3 1.2-3.4-1.5-0.8-5.7 3.2-0.6 1.2-3-2.4-2.5 2.2-2.3-0.2-3.1-2.2-5.2-8.7-3.9-2.2-5.5 8.4-10 1.4 2.7 5.2-1.8 0.5-0.8 1.8 2.3 6.3 0.9 1.1-3.3 2.8-0.5 12 1.4-0.5 2.8 3.5 5 2.5-1.6 1.4 2.9 3.1-0.8 3.8-5.3 1 2.9 13.8 4.7 1.7 2z" />
+            <path data-numerodepartement="12" data-nom="Aveyron"
+                d="m430.8 440.7l9.4 4.5-2 3.9-2.8 1.1 8.4 4.1-4.3 5.3 0.3 1.5-3.7 1-3 5.3-6.3-1.3-0.1 8.7-5.7-0.1-1.3-2.8-11.1-1.3-4.2-5-4.3-11.5-4.8-4.3-10.3-5.8-6.1 2.8-4.3-3.6 2.3-2.4-3.1-2.7 0.4-3-0.8-9.1 7.6-5 5.9-1.4 1.7-1.5h0.1l5.1-3.2 6.4 1.5 3.8-4.8 3-9.1 4.7-4.2 5.2 4 1.3 4.2 2.4 1.6-0.5 3 2.6 5.1v0.1l4.2 4.5 2.9 8.8-0.5 8.7z" />
+            <path data-numerodepartement="30" data-nom="Gard"
+                d="m480 487.2l-2.8-0.6-1.9-1.6-1.1-3.4h-0.1l3.3-4.4-1.5-3-6.1-6.7-3-0.2-0.2-3-6.8-1.4 0.9-2.7-1.9-2.6-3.9 0.6-4.2 3.9-0.1 2.8-5.3-2.5-2.2 1.7-0.4-2.9-2.9-0.1-0.3-1.5 4.3-5.3-8.4-4.1 2.8-1.1 2-3.9 7.8 3.4 3.9-0.5 0.1-3.3 8.7 2.2 6.3-1.8-1.4-3 1.2-2.9-3.9-7.7 3.6-2.5 1.1-2.1 2.7 5.9 7.8 5 7.1-4.3 0.1 3.1 2.5-2.3h2.8l6 3.5 2.6 4.4 0.2 5.5 6.3 6.4-4.5 5-3.9 4.1-1.9 10.6-3.3-0.9-4.2 4.8 1 2.7-5.8 1.8z" />
+            <path data-numerodepartement="31" data-nom="Haute-Garonne"
+                d="m326.8 526.2l-5.5-1.5-1.2 2.4 0.2 7.6-8.8-0.7-1.7 0.3-0.6-7 5.5-3.2 2.6-5.3-0.8-2.7-3.1 0.3 0.6-3.5-4.6-4 7.1-11.2 3.1-1.1 3.5-5.3 11.4 2.5 0.7-5.8 6.5-6.1-9.1-13.3 9.9-0.9 1.7 2.3 5.8-2.5-2.2-2.3 11.7-4.3 1.4 6.3 2.6 1.2 0.2 2.8 2.3 2.1-0.7 5.4 14.3 9.3 1 2.8-0.5 0.8-5.2 1.8-1.4-2.7-8.4 10-2 2.3-5.7-2.2-0.6 2.8-2.8 0.5-3.4-5.5-2.8 1.1 3 4.8-5.4 1.6 0.4 5.6-6.2-4.1-2.8 1.1-3.9 4v5.9l-2.8 1-3.8 5.2z" />
+            <path data-numerodepartement="32" data-nom="Gers"
+                d="m330.6 461.7l2 6.9 9.1 13.3-6.5 6.1-0.7 5.8-11.4-2.5-3.5 5.3-3.1 1.1-12.4-2.2-1.4-3-5.5 0.6-2.6-8.7-3.3-1.3-2-3.5-3.9 0.5-6.6-0.3-1.6-2.7 4.2-11.1-0.5-6.4 9.4-2.7 0.6 3 2.5-1.3 0.4-2.9v-0.1l3.7 0.7 1.4-2.5 8.3 0.7 5-2.9 8.6 1 2.7-1.3 5.3 1.7-3.3 4.6z" />
+            <path data-numerodepartement="34" data-nom="HÚrault"
+                d="m474.1 481.6l-2.4-0.1-5.9 2.6-3.6 3.2-7.2 4.6-4.3 4.2 2.1-3.5-4.3 6.6h-6.8l-5.5 4-1.1 1.2-0.2-0.2-1.7-2-13.8-4.7-1-2.9-3.8 5.3-3.1 0.8-1.4-2.9-2.5 1.6-3.5-5 0.5-2.8 3.4-2 0.8-3-0.7-9.7 6.1 2.2c2.3-1.5 4.6-2.9 6.8-4.4l5.7 0.1 0.1-8.7 6.3 1.3 3-5.3 3.7-1 2.9 0.1 0.4 2.9 2.2-1.7 5.3 2.5 0.1-2.8 4.2-3.9 3.9-0.6 1.9 2.6-0.9 2.7 6.8 1.4 0.2 3 3 0.2 6.1 6.7 1.5 3z" />
+            <path data-numerodepartement="46" data-nom="Lot"
+                d="m385.4 413.1l3.3 5h-0.1l-1.7 1.5-5.9 1.4-7.6 5 0.8 9.1-6.2 0.8-7.5 5.5-2.6-2.3-8.7 2.5-0.5-4-2.4 1.5-2.7-1-4.5-4 2.1-2.3-3.1 0.5-2.7-9.1 3.4-3.1 4.7-6.5 6-3.4-0.6-3.6 4.5-3.2 1.4-5.3 0.7-5 8.1-0.8 6.7 6.1 5.3-2.7 6.7 0.2 1 5.4 3.8 6z" />
+            <path data-numerodepartement="48" data-nom="LozÞre"
+                d="m463.4 418.7l4.2 8.3-1.1 2.1-3.6 2.5 3.9 7.7-1.2 2.9 1.4 3-6.3 1.8-8.7-2.2-0.1 3.3-3.9 0.5-7.8-3.4-9.4-4.5-1.5-2.4 0.5-8.7-2.9-8.8-4.2-4.5v-0.1l6.9-15.9 1.7 2.3 6.8-5.7 1-1 2.3 1.7 1.5 5.7 6.4 1.2 0.1-2.8 2.9 0.2 9 7.7z" />
+            <path data-numerodepartement="65" data-nom="Hautes-PyrÚnÚes"
+                d="m314.7 524.1l-5.5 3.2 0.6 7-0.7 0.2-2.3-1.6-2.4 1.8-2.5-0.5-1.9-1.7-3.9-0.3-6.9 2.1-2.2-0.9-2.1-1.7-1.1-2.5-7.8-5.5-2.1 1.8 1.4-9.3 1.6-2.8 3.4-0.8-0.4-2.9 8-9.3-0.8-3.1 2.7-1.4-0.5-7.2h-2.9l1.5-2.8-2.5-5.8 3.9-0.5 2 3.5 3.3 1.3 2.6 8.7 5.5-0.6 1.4 3 12.4 2.2-7.1 11.2 4.6 4-0.6 3.5 3.1-0.3 0.8 2.7z" />
+            <path data-numerodepartement="66" data-nom="PyrÚnÚes-Orientales"
+                d="m427.6 528.3l0.3 15.6 3.9 3.3 1.9 3.8h-2.3l-8.1-2.7-6.9 3.9-3-0.2-2.4 1.1-0.6 2.4-2.1 1.2-2.4-0.7-2.9 1-4-3.1-7-2.9-2.5 1.4h-3l-1 2.1-4.6 2-1.9-1.7-1.7-4.8-7.5-2-2-2.1 2-2.3 8-2.4 1.3-2.6 7.4-0.2 8.6-3.9-1.4-6 2.7-1.4 13.6 1 8.2-5.4z" />
+            <path data-numerodepartement="81" data-nom="Tarn"
+                d="m419.7 471.9l1.3 2.8c-2.2 1.5-4.5 2.9-6.8 4.4l-6.1-2.2 0.7 9.7-0.8 3-3.4 2-12-1.4-2.8 0.5-1.1 3.3-6.3-0.9-1.8-2.3-1-2.8-14.3-9.3 0.7-5.4-2.3-2.1-0.2-2.8-2.6-1.2-1.4-6.3 0.5-2.8 4.8-3.2 1-2.7-1.8-2.2 3-1.1 2.7 1.1 9.2-3.2 6.1-2.8 10.3 5.8 4.8 4.3 4.3 11.5 4.2 5z" />
+            <path data-numerodepartement="82" data-nom="Tarn-et-Garonne"
+                d="m360 458.1l-0.5 2.8-11.7 4.3 2.2 2.3-5.8 2.5-1.7-2.3-9.9 0.9-2-6.9-5.1-4.1 3.3-4.6-5.3-1.7 3.6-4.7 2.8 0.2-1.3-2.7 4.4-5.5-2.4-1.4v-2.9l7.5-2 3.1-0.5-2.1 2.3 4.5 4 2.7 1 2.4-1.5 0.5 4 8.7-2.5 2.6 2.3 7.5-5.5 6.2-0.8-0.4 3 3.1 2.7-2.3 2.4 4.3 3.6-9.2 3.2-2.7-1.1-3 1.1 1.8 2.2-1 2.7z" />
+            <path data-numerodepartement="01" data-nom="Ain"
+                d="m542 347l-5.7 6.7-11.2-15.2-2.8 0.7-3 5.1-6-2-6.4 0.5-3.7-5.7-2.8 0.5-3.1-9.2 1.5-8 5.9-20.9 5.9 1.5 5.4-1.3 4.8 3.3 4.3 7.7h2.9l0.1 3 2.9-0.1 4-4.4 3.4 1.6 0.4 2.8 3.8-0.2 5.5-3.2 5.3-7.2 4.5 2.7-1.8 4.7 0.3 2.5-4.4 1.5-1.9 2 0.2 2.8 0.5 0.2-4.4 4.7h-2.9l0.8 9.3z" />
+            <path data-numerodepartement="03" data-nom="Allier"
+                d="m443.1 292.3l5.9-6 6.7 13.5 7.9 2.9 1.6 2.4-0.5 5.5-3.7 4.6-3.9 1.3-0.5 3 1.5 12.4-5.5 4.8-3.5-4.3-6.4-0.4-1.4-3.2-13.1-0.5-1.6-2.5-3.3 0.5-4.4-4.5 1.2-2.8-2.3-1.7-11.2 8-2.5-1.2-3.6-8.4c-2.5-1.6-4.9-3.2-7.4-4.8l-1.1-3.9v-0.1l3.5-5.9 8.7-1 1.7-2.4-1.7-5.3 2.3-1.9 8.4-2.9 4.8-3.7h4 0.1l5.7 6.3 6.4 0.2 2.8-1.7z" />
+            <path data-numerodepartement="07" data-nom="ArdÞche"
+                d="m496.5 434.2l0.1 3.7-6-3.5h-2.8l-2.5 2.3-0.1-3.1-7.1 4.3-7.8-5-2.7-5.9-4.2-8.3-2.1-9.1 6.7-6.4 5.9-1.9 3.4-5.9 3.4-0.4-0.7-2.8 2.6-2.3 1.5-5.2 2.6 1.2v-3.1l0.9-4.1 3.5-0.8 3.2-4.9 5-2.7 2 4.2 0.5 10.3 3.8 11.3-1.5 6.2-3.5 4.5 1 7.1-3 5.9z" />
+            <path data-numerodepartement="15" data-nom="Cantal"
+                d="m435.6 387.9l3.5 8-1 1-6.8 5.7-1.7-2.3-6.9 15.9-2.6-5.1 0.5-3-2.4-1.6-1.3-4.2-5.2-4-4.7 4.2-3 9.1-3.8 4.8-6.4-1.5-5.1 3.2-3.3-5 1.7-5.8-3.8-6-1-5.4h0.1l3.2-1.9-1.5-3.4 3.1-1.1 0.3-3.5 2.3-1.9-1.8-2.2 7.6-9.5 0.6-3.5 6.2 2-0.7-6 7.5 3.5 1.5 2.5 6.7 0.3 6.5 5.4 3.7-4.1v3.9l5.5 1.5 3.3 8.7 2.6 1.1z" />
+            <path data-numerodepartement="26" data-nom="Dr¶me"
+                d="m535.1 404.4l-3 0.5-0.8-17.5-3 1.7-8.2-1.9-2.7 1 1.1-6.3-3.3-7.8-4.9-2.7-9 3.1 0.5 10.3 3.8 11.3-1.5 6.2-3.5 4.5 1 7.1-3 5.9-2.1 14.4 5.9 0.7 3.5 4.2 8.7-3.9 2.4 1.4 2.5-2.2 0.5 5.8 9.3 0.9 0.1 2.8 5.2 2.3 4.3-4.8 2.3-0.1 1-0.2 0.2-4.7-10-5.7-1.5-2.6 3.2-5.1 4.2 1.4 2.5-2.5-3-2.3 2.5-6.7 5.8-0.3 0.3-3.4-5.9-0.8z" />
+            <path data-numerodepartement="38" data-nom="IsÞre"
+                d="m513.6 349.4l-0.3-7.1 6 2 3-5.1 2.8-0.7 11.2 15.2 6.5 10.5 6.2 0.2 0.3-2.8 9.4 2.1 2.7 6.3-2.3 5.5 1 5.4 5.2 1.5-1.6 3.8 1.8 4.2 4.4 3.1-0.4 5.8-3.1-1.1-12.6 3.9-0.9 2.8-5.5 1.2-1 3.1-5.9-0.8-5.4-4-3 0.5-0.8-17.5-3 1.7-8.2-1.9-2.7 1 1.1-6.3-3.3-7.8-4.9-2.7-9 3.1-2-4.2v-4.4l-0.2-1.1h0.1l4.4-3.9-1.9-2.5 2.5-2.5 6.9-1.5z" />
+            <path data-numerodepartement="42" data-nom="Loire" class="wine-region"
+                d="m499.3 365.9v4.4l-5 2.7-3.2 4.9-3.5 0.8-2.2-2.4-2.6 1-0.7-5.5-6-2.2-6.2 3-2.8 0.4-2.3-2-2.8 0.8 3-7.1-2.7-7.5-4.6-3.8-4.7-7.7 2.1-6.3-2.5-2.7 5.5-4.8-1.5-12.4 0.5-3 3.9-1.3v3l5.2 3.3 8-1.5 2.1 2.1 5.7-3.8v-0.1l2.1 3-4.9 3.5-1.6 8.6 5.2 6.7-1.7 5.9 2.3 1.6-1.3 2.5 1.1 3 4.6 4.1 5.9 2.1 0.9 3 4.6 2.6h-0.1z" />
+            <path data-numerodepartement="43" data-nom="Haute-Loire"
+                d="m485.4 376.3l2.2 2.4-0.9 4.1v3.1l-2.6-1.2-1.5 5.2-2.6 2.3 0.7 2.8-3.4 0.4-3.4 5.9-5.9 1.9-6.7 6.4-9-7.7-2.9-0.2-0.1 2.8-6.4-1.2-1.5-5.7-2.3-1.7-3.5-8 3.4-0.2-2.6-1.1-3.3-8.7-5.5-1.5v-3.9-0.1l9.6-3.2 8.5 0.1 5.2 3.2 11.1-0.7 2.8-0.8 2.3 2 2.8-0.4 6.2-3 6 2.2 0.7 5.5z" />
+            <path data-numerodepartement="63" data-nom="Puy-de-D¶me"
+                d="m449.1 332.4l3.5 4.3 2.5 2.7-2.1 6.3 4.7 7.7 4.6 3.8 2.7 7.5-3 7.1-11.1 0.7-5.2-3.2-8.5-0.1-9.6 3.2v0.1l-3.7 4.1-6.5-5.4-6.7-0.3-1.5-2.5-7.5-3.5-1.2-7.9 1.7-2.4-1.2-5.6-4.4-5.5 9.3-8.6-2.3-6.7 0.5-4.1 2.5 1.2 11.2-8 2.3 1.7-1.2 2.8 4.4 4.5 3.3-0.5 1.6 2.5 13.1 0.5 1.4 3.2z" />
+            <path data-numerodepartement="69" data-nom="Rh¶ne"
+                d="m493.1 312.7l5.7 7.7-1.5 8 3.1 9.2 2.8-0.5 3.7 5.7 6.4-0.5 0.3 7.1-2.5 5-6.9 1.5-2.5 2.5 1.9 2.5-4.4 3.9-4.6-2.6-0.9-3-5.9-2.1-4.6-4.1-1.1-3 1.3-2.5-2.3-1.6 1.7-5.9-5.2-6.7 1.6-8.6 4.9-3.5-2.1-3 0.3-2.9 2.3-1.9 2.2 1.7 2.2-1.6 2.5 1.5z" />
+            <path data-numerodepartement="73" data-nom="Savoie"
+                d="m603.7 362l-1 10.3-3.1 1.4-2.2 0.7-4.5 3.4-1.5 2.4-2.5-1.4-5.1 1.3-2 1.8v0.1l-6.8 1.9-2 2-7.7-3.5-5.2-1.5-1-5.4 2.3-5.5-2.7-6.3-9.4-2.1-0.3 2.8-6.2-0.2-6.5-10.5 5.7-6.7 2.3-13.6 2.7 6.7 2.7 0.9 1.3 2.5 3 1.7 2.6-1.6 3.2 0.8 4.6 3.6 9.4-13.9 2.4 1.6-0.6 3 2.3 1.8 6.2 2.3 2.2-1.5 0.6-0.8 1.9 4.7 2.7 1.1 1.5 1.9 2.8 0.4-0.7 3 1.3 5.2 5.1 4z" />
+            <path data-numerodepartement="74" data-nom="Haute-Savoie"
+                d="m547 340.1l-2.7-6.7-0.8-9.3h2.9l4.4-4.7 2.2 0.9 2.3-1 2.3 0.1 3.4-3.5 2.1-1 1-2.3-2.8-1.3 1.8-5.1 2.4-0.8 2.3 1 3.6-2.9 9.5-1.3 3.2 0.6-0.5 2.7 4.2 4.1-2.1 6.4-0.6 1.5 4.6 1.7-0.1 4.8 2-1.4 4.6 6.6-1.3 5-2.5 1.7-4.9 0.9-0.6 3.7-0.6 0.8-2.2 1.5-6.2-2.3-2.3-1.8 0.6-3-2.4-1.6-9.4 13.9-4.6-3.6-3.2-0.8-2.6 1.6-3-1.7-1.3-2.5z" />
+            <path data-numerodepartement="04" data-nom="Alpes-de-Haute-Provence"
+                d="m596.5 409.9l0.6-0.5-0.4 4.5-2.2 1.5-0.6 2.9 3.5 4-1.8 4.8 0.2 0.2-6.8 7.8-2 5.3 4.3 8.5 7 7.7-5.2-0.6-5.2 3.8 1.2 2.6-3 1.4-9.8 0.4-1.2 3.5-5.9-3.6-10.1 8.5-4-4.8-2.7 1.8-5.3-0.2-6.1-6-3.4-1.1 1.7-2.5-3.7-5.2 1.2-3-2.2-5.4 4.3-4.8 2.3-0.1 1-0.2 5.9-1.4 3.8 1-3.4-4.9 3.9 1.1 1.4-8.6 5.3-4 3.3-0.7 3.5 4.5 0.7-3.8 3.8-4.2 11.1 3.3 9-10.2z" />
+            <path data-numerodepartement="05" data-nom="Hautes-Alpes"
+                d="m597.1 409v0.4l-0.6 0.5-6 3.3-9 10.2-11.1-3.3-3.8 4.2-0.7 3.8-3.5-4.5-3.3 0.7-5.3 4-1.4 8.6-3.9-1.1 3.4 4.9-3.8-1-5.9 1.4 0.2-4.7-10-5.7-1.5-2.6 3.2-5.1 4.2 1.4 2.5-2.5-3-2.3 2.5-6.7 5.8-0.3 0.3-3.4 1-3.1 5.5-1.2 0.9-2.8 12.6-3.9 3.1 1.1 0.4-5.8-4.4-3.1-1.8-4.2 1.6-3.8 7.7 3.5 2-2 6.8-1.9 1.8 4.5 2.4 0.6 1.1 2 0.4 3 1.2 2.2 3 2.3 5.7 0.5 2.2 1.3-0.7 2.1 3.2 4.7-3 1.5z" />
+            <path data-numerodepartement="06" data-nom="Alpes-Maritimes"
+                d="m605.3 477.1l-3.2-0.1-1.3 1.8-0.1 2.2-0.4 0.8-2.2-4 0.8-2.9-5.6-2.6-1.7-5.6-5.5-2.9 3-1.4-1.2-2.6 5.2-3.8 5.2 0.6-7-7.7-4.3-8.5 2-5.3 6.8-7.8 6.9 7.8 6.9 1.6 4.2 2.8 2.5-0.4 1.8 1.4 10.3-2.4 2.7-1.8-0.3 2.6 1.5 2.2 0.3 3.2-1.6 1.9-0.2 2.3-2.7 1.6-3.3 5-0.5 1.6 1.1 2.7-1.1 2.7-3.5 2.9-2.3 0.5-0.9 2.4-3-0.9-1.5 2.1-2.3 0.5-1.8 2.4 0.1 2.8-2.4 0.6z" />
+            <path data-numerodepartement="13" data-nom="Bouches-du-Rh¶ne"
+                d="m545 500.2l2.5-2-2.2-6.3 1.1-2.6 2.7-0.5-5.5-9.1 2-5.3 3.3-0.8-1.9-3.8-0.1-0.1-6.6 4.3-3.2 0.2-12-4.8-3.5 0.7-4.5-2.3-5.5-5.7-10.4-2.9-3.9 4.1-1.9 10.6-3.3-0.9-4.2 4.8 1 2.7-5.8 1.8-3.1 4.9 0.2 0.1h13.2l2.2 0.9 1 2.2-1.6 1.5 2.2 1.4 7.4 0.1 3.2 1.3 1.8-1.7-1.5-2.8 0.4-2.4 4.9 1 3 5.3 10-0.8 2.6-1.1 1.8 2-0.2 2.5 1 2-1.2 2.2h9.2l1.3 2 2.2-0.8 1.7 0.2z" />
+            <path data-numerodepartement="83" data-nom="Var"
+                d="m600.3 481.8l-1.4 2.5-6.8 1.7-0.7 2.5-5.5 5.7 5 0.7-2 4.8-4 0.2-4.8 2.5-3.5 1.1 0.1 2.7-4.9-1.5-2.7 0.5-1.6 1.6-0.4 2.3-2.2 1.6 1.4-1.8-2.4-1.7-2.2 0.7-1.6-1.6-3.1 0.1 0.9 2.2-2.3-0.4-1.5 1.7-3-1.1 0.6-2.3-6.4-4.1-0.5-0.1 0.2-2.1 2.5-2-2.2-6.3 1.1-2.6 2.7-0.5-5.5-9.1 2-5.3 3.3-0.8-1.9-3.8 0.1-0.4 5.3 0.2 2.7-1.8 4 4.8 10.1-8.5 5.9 3.6 1.2-3.5 9.8-0.4 5.5 2.9 1.7 5.6 5.6 2.6-0.8 2.9z" />
+            <path data-numerodepartement="84" data-nom="Vaucluse"
+                d="m541 463.4l6.1 6-0.1 0.4-0.1-0.1-6.6 4.3-3.2 0.2-12-4.8-3.5 0.7-4.5-2.3-5.5-5.7-10.4-2.9 4.5-5-6.3-6.4-0.2-5.5-2.6-4.4-0.1-3.7 5.9 0.7 3.5 4.2 8.7-3.9 2.4 1.4 2.5-2.2 0.5 5.8 9.3 0.9 0.1 2.8 5.2 2.3 2.2 5.4-1.2 3 3.7 5.2-1.7 2.5z" />
+            <path data-numerodepartement="2A" data-nom="Corse-du-Sud"
+                d="m640.5 554.2l3.2-1.7 0.7 8.4-0.1 0.5-1.9 4.9-2.7 1.9 3.3 0.4-5.8 14.7-3.1-1.2-1.2-2.8-11.2-3.4-4.8-4.4 0.2-3 4.9-3.3-9.5-1.9 2.7-7-0.9-5.8-7.3 2.6 3-8.4 2.6-1.6-7.9-4.4-1.1-5.5 5.3-3.8-3.8-4.2-2.6 1 0.5-2.7 13.6 2.1 1.2 3.5 6 3.4 6 5.9 0.5 3.2 2.7 1.1 3.7 11z" />
+            <path data-numerodepartement="2B" data-nom="Haute-Corse"
+                d="m643.7 551.5v1l-3.2 1.7-3.8-0.5-3.7-11-2.7-1.1-0.5-3.2-6-5.9-6-3.4-1.2-3.5-13.6-2.1v-0.2l3.9-5-0.3-3.4 2.2-2.8 2.8-0.3 0.9-2.9 10.7-4.2 3.5-4.9 8.6 1.3-0.5-17.4 2.4-2 2.9 1.1 0.2 0.9 1.5 8.2-0.5 10.6 4 5.6 3.8 26-5.4 11.9v5.5z" />
+            <g id="markers-container"></g>
+        </svg>
+    </div>
+
+    <!-- Panel latéral permanent (400px, toujours visible) -->
+    <div id="info-panel">
+
+        <!-- En-tête panneau : titre + onglets filtre -->
+        <div id="ip-header">
+            <div id="ip-header-top">
+                <div>
+                    <div class="ip-title">La Route des Vins</div>
+                    <div class="ip-subtitle">Cliquez sur un département</div>
+                </div>
+                <button id="ip-close-btn" onclick="returnToMap()" aria-label="Fermer">×</button>
+            </div>
+            <div class="ip-filter-tabs">
+                <button class="ip-filter-tab active">Tous</button>
+                <button class="ip-filter-tab">Rouge</button>
+                <button class="ip-filter-tab">Blanc</button>
+                <button class="ip-filter-tab">Nature</button>
+            </div>
+        </div>
+
+        <!-- Corps du panneau -->
+        <div id="ip-body">
+
+            <!-- État par défaut (affiché quand aucun département n'est sélectionné) -->
+            <div id="ip-default-state">
+                <p class="ip-default-hint">Cliquez sur un département pour explorer ses domaines</p>
+                <div class="ip-stats-grid">
+                    <div class="ip-stat-card">
+                        <div class="ip-stat-num">320<span class="ip-stat-plus">+</span></div>
+                        <div class="ip-stat-label">Domaines</div>
+                    </div>
+                    <div class="ip-stat-divider"></div>
+                    <div class="ip-stat-card">
+                        <div class="ip-stat-num">12</div>
+                        <div class="ip-stat-label">Régions</div>
+                    </div>
+                    <div class="ip-stat-divider"></div>
+                    <div class="ip-stat-card">
+                        <div class="ip-stat-num">89</div>
+                        <div class="ip-stat-label">Départements</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bouton retour (conservé pour compatibilité JS fullscreen) -->
+            <button id="panel-back-btn" onclick="returnToMap()">← Retour à la carte</button>
+
+            <!-- Contenu injecté par le JS -->
+            <div id="panel-content"></div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+    </div>
+
+    <script src="app.js?v=3"></script>
+    <script src="firebase-config.js?v=2"></script>
+    <script src="ma-carte.js?v=4"></script>
+    <script src="reseau.js?v=2"></script>
+
+    <!-- ===== Notification de sauvegarde ===== -->
+    <div id="mc-save-notif" role="status" aria-live="polite">Modifications enregistrées ✓</div>
+
+    <!-- ===== Indicateur de carte active (milieu bas) ===== -->
+    <div id="map-indicator" onclick="handleMapIndicatorClick()">
+        <span id="map-indicator-name">Carte Marguerite</span>
+        <span class="map-indicator-arrow">▾</span>
+    </div>
+    <div id="map-indicator-popup" class="hidden"></div>
+
+    <!-- ===== Panneau d'info d'un marqueur personnel ===== -->
+    <div id="mc-info-panel"></div>
+
+    <!-- ===== Formulaire d'ajout Ma Carte ===== -->
+    <div id="mc-form-modal" style="display:none" onclick="if(event.target===this)closeMcForm()">
+        <div class="mc-form-box" role="dialog" aria-modal="true" aria-labelledby="mc-form-title">
+            <button class="modal-close" onclick="closeMcForm()" aria-label="Fermer">×</button>
+            <h2 id="mc-form-title">Mon carnet de route</h2>
+
+            <!-- Sélecteur de carte active -->
+            <div id="mc-map-switcher-area">
+                <label class="mc-label" style="margin-bottom:0">
+                    <span>Carte active</span>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <select id="mc-map-select" onchange="switchActiveMap(this.value)"></select>
+                        <button type="button" class="mc-icon-btn" onclick="promptCreateMap()" title="Nouvelle carte">+</button>
+                    </div>
+                </label>
+            </div>
+
+            <form id="mc-form" onsubmit="submitMcForm(event)">
+                <label class="mc-label">
+                    <span>Nom du domaine <span class="mc-required">*</span></span>
+                    <input type="text" id="mc-name" required placeholder="ex : Domaine de l'Oubliée">
+                </label>
+
+                <label class="mc-label">
+                    <span>Adresse <span class="mc-required">*</span></span>
+                    <input type="text" id="mc-address" required placeholder="ex : 26 rue Dorothée de Dino, Saint Patrice">
+                    <span class="mc-label-hint">Utilisée pour placer automatiquement le point sur la carte</span>
+                </label>
+
+                <div class="mc-cuvees-section">
+                    <div class="mc-cuvees-header">Cuvées</div>
+                    <div id="mc-cuvees-list"></div>
+                    <button type="button" class="mc-add-cuvee-btn" onclick="addCuveeRow('mc-cuvees-list')">+ Ajouter une cuvée</button>
+                </div>
+
+                <fieldset class="mc-statut-field">
+                    <legend>Statut</legend>
+                    <label class="mc-radio">
+                        <input type="radio" name="mc-statut" value="a_essayer" checked>
+                        <span class="mc-radio-pill mc-pill--essayer">À essayer</span>
+                    </label>
+                    <label class="mc-radio">
+                        <input type="radio" name="mc-statut" value="fait">
+                        <span class="mc-radio-pill mc-pill--fait">Fait ✓</span>
+                    </label>
+                </fieldset>
+
+                <p id="mc-geo-status" class="mc-geo-status" data-state="idle"></p>
+
+                <button type="submit" class="btn" id="mc-submit-btn">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== Panneau Mes Données (tableau de bord) ===== -->
+    <div id="mes-donnees-panel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="md-title">
+
+        <div id="md-header">
+            <h1 id="md-title">Mes Données</h1>
+            <button id="md-close-btn" onclick="closeMesDonnees()" aria-label="Fermer">×</button>
+        </div>
+
+        <nav id="md-tabs" role="tablist">
+            <button class="md-tab active" data-tab="cartes"         onclick="switchMdTab('cartes',this)"         role="tab" aria-selected="true" >Mes Cartes</button>
+            <button class="md-tab"        data-tab="stats"          onclick="switchMdTab('stats',this)"          role="tab" aria-selected="false">Statistiques</button>
+            <button class="md-tab"        data-tab="coups-de-coeur" onclick="switchMdTab('coups-de-coeur',this)" role="tab" aria-selected="false">Coups de Cœur</button>
+            <button class="md-tab"        data-tab="inventaire"     onclick="switchMdTab('inventaire',this)"     role="tab" aria-selected="false">Inventaire</button>
+            <button class="md-tab"        data-tab="departements"   onclick="switchMdTab('departements',this)"   role="tab" aria-selected="false">Départements</button>
+            <button class="md-tab"        data-tab="profil"         onclick="switchMdTab('profil',this)"         role="tab" aria-selected="false">Profil</button>
+            <button class="md-tab"        data-tab="partages"       onclick="switchMdTab('partages',this)"       role="tab" aria-selected="false" id="md-tab-btn-partages">Partages</button>
+        </nav>
+
+        <div id="md-body">
+
+            <!-- TAB : Mes Cartes -->
+            <section id="md-tab-cartes" class="md-tab-panel active" role="tabpanel">
+                <div class="md-section-header">
+                    <h2>Mes Cartes</h2>
+                    <button class="md-create-btn" onclick="promptCreateMap()">+ Nouvelle carte</button>
+                </div>
+                <div id="md-cartes-list"></div>
+            </section>
+
+            <!-- TAB : Statistiques -->
+            <section id="md-tab-stats" class="md-tab-panel" role="tabpanel">
+                <h2>Statistiques</h2>
+                <div id="md-stats-content"></div>
+            </section>
+
+            <!-- TAB : Coups de Cœur -->
+            <section id="md-tab-coups-de-coeur" class="md-tab-panel" role="tabpanel">
+                <h2>♥ Coups de Cœur</h2>
+                <div id="md-coeur-content"></div>
+            </section>
+
+            <!-- TAB : Inventaire des cuvées -->
+            <section id="md-tab-inventaire" class="md-tab-panel" role="tabpanel">
+                <h2>Inventaire des cuvées</h2>
+                <div class="md-search-bar-wrap">
+                    <input id="md-inventaire-search" type="text"
+                           placeholder="Rechercher une cuvée, appellation, domaine…"
+                           oninput="filterMdInventaire(this.value)"
+                           autocomplete="off">
+                </div>
+                <div id="md-inventaire-content"></div>
+            </section>
+
+            <!-- TAB : Départements -->
+            <section id="md-tab-departements" class="md-tab-panel" role="tabpanel">
+                <h2>Départements visités</h2>
+                <p class="breadcrumb" id="md-dept-count"></p>
+                <div id="md-dept-content"></div>
+            </section>
+
+            <!-- TAB : Profil -->
+            <section id="md-tab-profil" class="md-tab-panel" role="tabpanel">
+                <h2>Mon Profil</h2>
+                <div id="md-profil-content"></div>
+            </section>
+
+            <!-- TAB : Partages -->
+            <section id="md-tab-partages" class="md-tab-panel" role="tabpanel">
+                <h2>Partages de cartes</h2>
+                <div id="md-partages-content"></div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- ===== Modal d'authentification ===== -->
+    <div id="auth-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeAuthModal()">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+            <button class="modal-close" onclick="closeAuthModal()" aria-label="Fermer">×</button>
+            <h2 id="auth-title">Connexion</h2>
+            <form id="auth-form" onsubmit="event.preventDefault();submitAuth()">
+                <div id="auth-firstname-wrap" class="hidden">
+                    <input type="text" id="auth-firstname" placeholder="Prénom (affiché dans le réseau)" autocomplete="given-name" maxlength="30">
+                </div>
+                <input type="email"    id="auth-email"    placeholder="Email"          required autocomplete="email">
+                <input type="password" id="auth-password" placeholder="Mot de passe"   required autocomplete="current-password">
+                <button type="submit" class="btn" id="auth-submit">Se connecter</button>
+            </form>
+            <p id="auth-error" class="auth-error hidden"></p>
+            <p class="auth-switch">
+                <span id="auth-toggle-text">Pas encore de compte ?</span>
+                <a href="#" id="auth-toggle" onclick="event.preventDefault();toggleAuthMode()">S'inscrire</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ===== Modal demande d'accès à une carte ===== -->
+    <div id="map-request-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeMapRequestModal()">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="map-request-title">
+            <button class="modal-close" onclick="closeMapRequestModal()" aria-label="Fermer">×</button>
+            <h2 id="map-request-title">Demander l'accès</h2>
+            <div id="map-request-body">
+                <p class="reseau-loading">Chargement des cartes…</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Panneau Chat privé ===== -->
+    <div id="chat-panel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="chat-title">
+        <div id="chat-header">
+            <button id="chat-back-btn" onclick="closeChat()" aria-label="Retour">←</button>
+            <span id="chat-title">Discussion</span>
+        </div>
+        <div id="chat-messages"></div>
+        <div id="chat-input-wrap">
+            <input id="chat-input" type="text" placeholder="Votre message…" maxlength="500"
+                   onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendChatMessage()" autocomplete="off">
+            <button id="chat-send-btn" onclick="sendChatMessage()" aria-label="Envoyer">→</button>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         PLANIFICATEUR D'ITINÉRAIRE — FAB + Sidebar + Print
+         ========================================================= -->
+
+    <!-- Sidebar itinéraire (slide depuis la droite) -->
+    <aside id="itin-sidebar" class="itin-sidebar" aria-label="Planificateur d'itinéraire">
+
+        <!-- En-tête sidebar -->
+        <div class="itin-sidebar-header">
+            <h3 class="itin-sidebar-title">🗺 Mon Itinéraire</h3>
+            <button class="itin-sidebar-close" onclick="toggleItinerary()" aria-label="Fermer">×</button>
+        </div>
+
+        <!-- État vide -->
+        <div id="itin-empty" class="itin-empty">
+            <div class="itin-empty-icon">🍷</div>
+            <p class="itin-empty-text">
+                Ouvrez la fiche d'un domaine<br>
+                et cliquez sur<br>
+                <strong>« + Ajouter à mon itinéraire »</strong>
+            </p>
+        </div>
+
+        <!-- Liste des étapes -->
+        <div id="itin-list" class="itin-list"></div>
+
+        <!-- Résumé kilométrage + durée -->
+        <div id="itin-summary" class="itin-summary hidden">
+            <div class="itin-summary-stats">
+                <div class="itin-stat">
+                    <span class="itin-stat-icon">📍</span>
+                    <div>
+                        <span id="itin-km" class="itin-stat-val">—</span>
+                        <span class="itin-stat-lbl">km estimés</span>
+                    </div>
+                </div>
+                <div class="itin-stat">
+                    <span class="itin-stat-icon">⏱</span>
+                    <div>
+                        <span id="itin-time" class="itin-stat-val">—</span>
+                        <span class="itin-stat-lbl">de trajet</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div id="itin-actions" class="itin-actions hidden">
+            <button class="itin-btn-optimize" onclick="optimizeRoute()">
+                ✨ Optimiser mon trajet
+            </button>
+            <div class="itin-export-row">
+                <button class="itin-btn-maps" onclick="exportToGoogleMaps()">📍 Google Maps</button>
+                <button class="itin-btn-pdf"  onclick="exportToPDF()">📄 PDF</button>
+            </div>
+            <button class="itin-btn-clear" onclick="clearItinerary()">🗑 Vider l'itinéraire</button>
+        </div>
+    </aside>
+
+    <!-- Zone d'impression (PDF) — cachée à l'écran, visible uniquement à l'impression -->
+    <div id="itin-print-overlay"></div>
+
+    <!-- ===== Panneau Réseau Social v2 ===== -->
+    <div id="reseau-panel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="rv2-title">
+
+        <!-- Hero -->
+        <div id="rv2-hero">
+            <button id="reseau-close-btn" onclick="closeReseau()" aria-label="Fermer">×</button>
+            <div id="rv2-hero-deco-top"></div>
+            <div id="rv2-hero-deco-bot"></div>
+            <div id="rv2-hero-inner">
+                <div>
+                    <div class="rv2-label">
+                        <div class="rv2-label-line"></div>
+                        <span>Mon Réseau</span>
+                    </div>
+                    <h1 id="rv2-title">Explorez<br><em>ensemble.</em></h1>
+                </div>
+                <div id="rv2-hero-stats">
+                    <div class="rv2-stat"><span class="rv2-stat-n" id="rv2-stat-amis">—</span><span class="rv2-stat-l">Amis</span></div>
+                    <div class="rv2-stat"><span class="rv2-stat-n" id="rv2-stat-membres">—</span><span class="rv2-stat-l">Membres</span></div>
+                </div>
+            </div>
+            <nav id="reseau-tabs" role="tablist">
+                <button class="reseau-tab active" data-tab="fil"
+                        onclick="switchReseauTab('fil', this)"
+                        role="tab" aria-selected="true">Découverte</button>
+                <button class="reseau-tab" data-tab="membres"
+                        onclick="switchReseauTab('membres', this)"
+                        role="tab" aria-selected="false" id="rv2-tab-amis-btn">Amis</button>
+                <button class="reseau-tab" data-tab="communs"
+                        onclick="switchReseauTab('communs', this)"
+                        role="tab" aria-selected="false">♥ Coups partagés</button>
+            </nav>
+        </div>
+
+        <!-- Body -->
+        <div id="rv2-body">
+            <div id="rv2-main">
+                <section id="reseau-tab-fil" class="reseau-tab-panel active" role="tabpanel">
+                    <div id="reseau-fil-content"></div>
+                </section>
+                <section id="reseau-tab-membres" class="reseau-tab-panel" role="tabpanel">
+                    <div id="reseau-membres-content"></div>
+                </section>
+                <section id="reseau-tab-communs" class="reseau-tab-panel" role="tabpanel">
+                    <div id="reseau-communs-content"></div>
+                </section>
+            </div>
+            <div id="rv2-sidebar"></div>
+        </div>
+
+    </div>
+
+<script>
+// ── Theme toggle ──────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+  }
+  _syncToggleIcons();
+})();
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  _syncToggleIcons();
+}
+
+function _syncToggleIcons() {
+  const isDark = document.documentElement.classList.contains('dark');
+  document.querySelectorAll('.theme-toggle-icon').forEach(el => {
+    el.textContent = isDark ? '☀️' : '🌙';
+  });
+}
+</script>
+
+</body>
+</html>

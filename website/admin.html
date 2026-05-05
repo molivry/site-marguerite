@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration — Route des Vins Marguerite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --green-dark:  #1C4220;
+            --green-mid:   #3a6b3e;
+            --green-light: #8aab6e;
+            --gold:        #C4661F;
+            --beige:       #e8e0d0;
+            --cream:       #f7f3ec;
+            --white:       #ffffff;
+            --text:        #444;
+            --font-body:   'Montserrat', sans-serif;
+            --font-display:'Playfair Display', serif;
+            --ease:        0.2s ease;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-body); background: var(--cream); color: var(--text); min-height: 100vh; }
+
+        /* ---- Header ---------------------------------------- */
+        header {
+            background: var(--green-dark);
+            color: var(--white);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-family: var(--font-display); font-size: 1.25em; font-style: italic; }
+        .header-badge {
+            background: var(--gold); font-size: 0.7em; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            padding: 4px 12px; border-radius: 20px;
+        }
+        .header-right { display: flex; align-items: center; gap: 14px; font-size: 0.84em; }
+        #admin-email-lbl { opacity: 0.65; }
+        .btn-sm {
+            background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+            color: var(--white); font-family: var(--font-body); font-size: 0.82em;
+            padding: 6px 14px; border-radius: 20px; cursor: pointer; transition: background var(--ease);
+            text-decoration: none; display: inline-block;
+        }
+        .btn-sm:hover { background: rgba(255,255,255,0.22); }
+
+        /* ---- Gates ----------------------------------------- */
+        .gate {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 80vh; gap: 16px; padding: 32px;
+        }
+        .gate-card {
+            background: var(--white); border-radius: 16px;
+            padding: 40px 48px; box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            max-width: 420px; width: 100%; text-align: center;
+        }
+        .gate-card h2 { font-family: var(--font-display); font-size: 1.5em; color: var(--green-dark); margin-bottom: 8px; }
+        .gate-card p  { font-size: 0.88em; color: #666; margin-bottom: 20px; }
+        .gate-card input {
+            width: 100%; padding: 10px 14px; border: 1.5px solid var(--beige);
+            border-radius: 8px; font-family: var(--font-body); font-size: 0.9em;
+            margin-bottom: 10px; outline: none; transition: border-color var(--ease);
+        }
+        .gate-card input:focus { border-color: var(--green-dark); }
+        .gate-card input[readonly] { background: #f5f5f5; color: #999; }
+        .btn-primary {
+            width: 100%; padding: 11px; background: var(--green-dark); color: var(--white);
+            border: none; border-radius: 8px; font-family: var(--font-body);
+            font-size: 0.9em; font-weight: 600; cursor: pointer; transition: background var(--ease);
+        }
+        .btn-primary:hover { background: var(--green-mid); }
+        #login-error { font-size: 0.82em; color: #b94040; margin-top: 8px; min-height: 18px; }
+
+        .spinner {
+            display: inline-block; width: 28px; height: 28px;
+            border: 3px solid var(--beige); border-top-color: var(--green-dark);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ---- Layout dashboard ------------------------------ */
+        #dashboard { display: flex; height: calc(100vh - 57px); overflow: hidden; }
+
+        /* Panneau gauche : stats + recherche */
+        #sidebar {
+            width: 340px; flex-shrink: 0;
+            background: var(--white); border-right: 1px solid var(--beige);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .sidebar-section { padding: 20px; border-bottom: 1px solid var(--beige); }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box {
+            background: var(--cream); border-radius: 10px; padding: 12px 14px;
+            border-left: 3px solid var(--green-light);
+        }
+        .stat-box.gold { border-left-color: var(--gold); }
+        .stat-box.green { border-left-color: #1C4220; }
+        .stat-val { font-size: 1.6em; font-weight: 700; color: var(--green-dark); line-height: 1; }
+        .stat-lbl { font-size: 0.7em; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px; }
+
+        /* Recherche */
+        .search-label { font-size: 0.8em; font-weight: 700; color: var(--green-dark); margin-bottom: 8px; display: block; }
+        .search-wrap { position: relative; }
+        .search-wrap input {
+            width: 100%; padding: 9px 36px 9px 14px;
+            border: 1.5px solid var(--beige); border-radius: 20px;
+            font-family: var(--font-body); font-size: 0.86em;
+            outline: none; transition: border-color var(--ease);
+        }
+        .search-wrap input:focus { border-color: var(--green-dark); }
+        .search-wrap button {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; color: var(--green-mid); font-size: 1em;
+        }
+
+        /* Liste utilisateurs */
+        #users-list { flex: 1; overflow-y: auto; }
+        #users-list-inner { padding: 8px; }
+
+        .user-item {
+            padding: 10px 14px; border-radius: 8px; cursor: pointer;
+            margin-bottom: 4px; transition: background var(--ease);
+        }
+        .user-item:hover  { background: var(--cream); }
+        .user-item.active { background: #e6f0e8; }
+        .ui-email { font-size: 0.84em; font-weight: 600; color: var(--green-dark); word-break: break-all; }
+        .ui-meta  { font-size: 0.72em; color: #aaa; margin-top: 2px; }
+
+        .users-empty { padding: 24px; text-align: center; font-size: 0.84em; color: #bbb; }
+
+        /* Panneau droit : carte de l'utilisateur */
+        #user-view {
+            flex: 1; overflow-y: auto;
+            padding: 28px 32px;
+            background: var(--cream);
+        }
+
+        .view-placeholder {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100%; gap: 12px; color: #bbb; text-align: center;
+        }
+        .view-placeholder .icon { font-size: 2.5em; }
+
+        /* En-tête utilisateur sélectionné */
+        .uv-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+        }
+        .uv-email { font-size: 1em; font-weight: 700; color: var(--green-dark); }
+        .uv-since { font-size: 0.78em; color: #aaa; }
+
+        .readonly-badge {
+            font-size: 0.7em; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+            background: #fde8d0; color: #8a4010; border: 1px solid #f0c49a;
+        }
+
+        /* Marqueurs */
+        .marker-card {
+            background: var(--white); border-radius: 12px;
+            margin-bottom: 14px; border-left: 4px solid var(--green-light);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden;
+        }
+        .marker-card.fait    { border-left-color: #1C4220; }
+        .marker-card.essayer { border-left-color: var(--gold); }
+
+        .mc-header {
+            padding: 14px 18px; display: flex;
+            align-items: flex-start; justify-content: space-between; gap: 12px;
+            cursor: pointer; user-select: none;
+        }
+        .mc-header:hover { background: #fafaf8; }
+
+        .mc-name    { font-weight: 700; font-size: 0.95em; color: var(--green-dark); }
+        .mc-address { font-size: 0.78em; color: #aaa; margin-top: 3px; }
+
+        .statut-pill {
+            font-size: 0.68em; font-weight: 700; padding: 3px 10px;
+            border-radius: 20px; color: var(--white); white-space: nowrap; flex-shrink: 0;
+        }
+        .statut-pill.fait    { background: #1C4220; }
+        .statut-pill.essayer { background: var(--gold); }
+
+        .mc-body {
+            display: none; border-top: 1px solid var(--beige);
+            padding: 14px 18px;
+        }
+        .marker-card.open .mc-body { display: block; }
+
+        /* Cuvées */
+        .cuvee-section-title {
+            font-size: 0.7em; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--green-mid);
+            display: flex; align-items: center; gap: 7px;
+            margin: 12px 0 6px;
+        }
+        .cuvee-section-title:first-child { margin-top: 0; }
+        .type-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+        .cuvee-row {
+            background: var(--cream); border-radius: 8px;
+            padding: 10px 12px; margin-bottom: 6px;
+            border: 1px solid #e0dbd0;
+        }
+        .cuvee-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+        .cuvee-nom { font-weight: 600; font-size: 0.87em; color: var(--green-dark); }
+        .cuvee-tag {
+            font-size: 0.67em; font-weight: 700; padding: 2px 8px;
+            border-radius: 10px; flex-shrink: 0;
+        }
+        .tag-bue     { background: #ede0f0; color: #5a3060; }
+        .tag-essayer { background: #fde8d0; color: #8a4010; }
+        .cuvee-meta    { font-size: 0.75em; color: #aaa; }
+        .cuvee-comment { font-size: 0.8em; font-style: italic; color: var(--text); margin-top: 4px; line-height: 1.45; }
+
+        .no-cuvees { font-size: 0.8em; color: #bbb; font-style: italic; }
+
+        /* Export */
+        .export-bar { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px; }
+        .btn-export {
+            padding: 8px 18px; background: var(--green-dark); color: var(--white);
+            border: none; border-radius: 20px; font-family: var(--font-body);
+            font-size: 0.82em; font-weight: 600; cursor: pointer; transition: background var(--ease);
+        }
+        .btn-export:hover { background: var(--green-mid); }
+
+        /* Loading inline */
+        .inline-spinner {
+            display: flex; align-items: center; gap: 10px;
+            padding: 20px; font-size: 0.84em; color: #aaa;
+        }
+
+        /* Scrollbar */
+        #users-list::-webkit-scrollbar,
+        #user-view::-webkit-scrollbar { width: 5px; }
+        #users-list::-webkit-scrollbar-thumb,
+        #user-view::-webkit-scrollbar-thumb { background: var(--beige); border-radius: 3px; }
+
+        @media (max-width: 700px) {
+            #dashboard { flex-direction: column; height: auto; }
+            #sidebar   { width: 100%; border-right: none; border-bottom: 1px solid var(--beige); max-height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <span class="header-title">Route des Vins Marguerite</span>
+        <span class="header-badge">Administration</span>
+    </div>
+    <div class="header-right">
+        <span id="admin-email-lbl"></span>
+        <a href="index.html" class="btn-sm">← Retour au site</a>
+        <button class="btn-sm" onclick="adminLogout()">Déconnexion</button>
+    </div>
+</header>
+
+<!-- Spinner de vérification de session -->
+<div id="gate-check" class="gate">
+    <div class="spinner"></div>
+    <p style="color:#aaa;font-size:0.84em">Vérification de la session…</p>
+</div>
+
+<!-- Formulaire de connexion -->
+<div id="gate-login" class="gate" style="display:none">
+    <div class="gate-card">
+        <h2>Accès Administration</h2>
+        <p>Entrez votre mot de passe pour continuer.</p>
+        <input type="email" id="login-email" value="marguerite.olivry@gmail.com" readonly>
+        <input type="password" id="login-password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')adminLogin()">
+        <button class="btn-primary" id="login-btn" onclick="adminLogin()">Se connecter</button>
+        <div id="login-error"></div>
+    </div>
+</div>
+
+<!-- Accès refusé -->
+<div id="gate-denied" class="gate" style="display:none">
+    <div class="gate-card">
+        <div style="font-size:2.5em;margin-bottom:8px">🔒</div>
+        <h2>Accès refusé</h2>
+        <p>Ce compte ne possède pas le rôle <strong>isAdmin</strong>.<br>
+           Assignez <code>isAdmin: true</code> dans Firestore pour ce compte.</p>
+        <button class="btn-primary" onclick="adminLogout()" style="margin-top:8px">Se déconnecter</button>
+    </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" style="display:none">
+
+    <!-- Panneau gauche -->
+    <div id="sidebar">
+
+        <!-- Stats globales -->
+        <div class="sidebar-section">
+            <div style="font-size:0.78em;font-weight:700;color:var(--green-mid);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px">Statistiques globales</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-val" id="s-users">—</div>
+                    <div class="stat-lbl">Utilisateurs</div>
+                </div>
+                <div class="stat-box gold">
+                    <div class="stat-val" id="s-domaines">—</div>
+                    <div class="stat-lbl">Domaines</div>
+                </div>
+                <div class="stat-box green">
+                    <div class="stat-val" id="s-fait">—</div>
+                    <div class="stat-lbl">Faits ✓</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="s-cuvees">—</div>
+                    <div class="stat-lbl">Cuvées</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recherche utilisateurs -->
+        <div class="sidebar-section">
+            <span class="search-label">Rechercher un utilisateur</span>
+            <div class="search-wrap">
+                <input type="text" id="user-search" placeholder="Email…" oninput="filterUsers()">
+                <button onclick="filterUsers()">🔍</button>
+            </div>
+        </div>
+
+        <!-- Liste utilisateurs -->
+        <div id="users-list">
+            <div id="users-list-inner">
+                <div class="inline-spinner"><div class="spinner" style="width:18px;height:18px;border-width:2px"></div> Chargement…</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Panneau droit -->
+    <div id="user-view">
+        <div class="view-placeholder">
+            <div class="icon">👤</div>
+            <p>Sélectionnez un utilisateur<br>pour consulter sa carte.</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ============================================================
+//  Firebase — initialisation autonome
+// ============================================================
+firebase.initializeApp({
+    apiKey:            "AIzaSyDUVQPr2JTGgYltGTZYHx93zQMHVWBpwu8",
+    authDomain:        "routedesvins-619cd.firebaseapp.com",
+    projectId:         "routedesvins-619cd",
+    storageBucket:     "routedesvins-619cd.firebasestorage.app",
+    messagingSenderId: "241974496911",
+    appId:             "1:241974496911:web:95c7c5c6127d3975fb6afa"
+});
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+const VIN_COLORS = { rouge:'#b94040', blanc:'#c9a227', rose:'#d4728a', bulles:'#5dade2', maceration:'#c97a2a' };
+const VIN_LABELS = { rouge:'Rouge', blanc:'Blanc', rose:'Rosé', bulles:'Bulles', maceration:'Macération' };
+const VIN_ORDER  = ['rouge','blanc','rose','bulles','maceration'];
+
+let allUsers = [];  // [{ uid, email, markerCount, faitCount, cuveeCount }]
+
+// ============================================================
+//  Auth
+// ============================================================
+auth.onAuthStateChanged(async user => {
+    if (!user) {
+        show('gate-login');
+        setTimeout(() => document.getElementById('login-password').focus(), 80);
+        return;
+    }
+    // Vérifie le rôle admin dans Firestore
+    try {
+        const snap = await db.collection('users').doc(user.uid).get();
+        if (!snap.exists || snap.data().isAdmin !== true) {
+            show('gate-denied');
+            return;
+        }
+    } catch (e) {
+        show('gate-denied');
+        return;
+    }
+    document.getElementById('admin-email-lbl').textContent = user.email;
+    show('dashboard');
+    loadStats();
+    loadAllUsers();
+});
+
+async function adminLogin() {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl    = document.getElementById('login-error');
+    const btn      = document.getElementById('login-btn');
+    errEl.textContent = '';
+    btn.disabled = true; btn.textContent = '…';
+    try {
+        await auth.signInWithEmailAndPassword(email, password);
+    } catch (err) {
+        const msgs = {
+            'auth/wrong-password':     'Mot de passe incorrect.',
+            'auth/invalid-credential': 'Mot de passe incorrect.',
+            'auth/too-many-requests':  'Trop de tentatives, réessayez plus tard.',
+        };
+        errEl.textContent = msgs[err.code] || err.message;
+    } finally {
+        btn.disabled = false; btn.textContent = 'Se connecter';
+    }
+}
+
+function adminLogout() { auth.signOut(); }
+
+function show(id) {
+    ['gate-check','gate-login','gate-denied','dashboard'].forEach(i => {
+        document.getElementById(i).style.display = (i === id) ? '' : 'none';
+    });
+}
+
+// ============================================================
+//  Stats globales
+// ============================================================
+async function loadStats() {
+    try {
+        const usersSnap = await db.collection('users').get();
+        let domaines = 0, fait = 0, cuvees = 0;
+
+        const markerPromises = usersSnap.docs.map(u =>
+            db.collection('user_maps').doc(u.id).collection('markers').get()
+                .then(s => {
+                    s.forEach(m => {
+                        domaines++;
+                        if (m.data().statut === 'fait') fait++;
+                        const c = m.data().cuvees;
+                        if (Array.isArray(c)) cuvees += c.length;
+                    });
+                }).catch(() => {})
+        );
+        await Promise.all(markerPromises);
+
+        document.getElementById('s-users').textContent   = usersSnap.size;
+        document.getElementById('s-domaines').textContent = domaines;
+        document.getElementById('s-fait').textContent    = fait;
+        document.getElementById('s-cuvees').textContent  = cuvees;
+    } catch (e) {
+        console.warn('Stats error:', e);
+    }
+}
+
+// ============================================================
+//  Chargement de la liste des utilisateurs
+// ============================================================
+async function loadAllUsers() {
+    try {
+        const usersSnap = await db.collection('users').orderBy('email').get();
+        const promises  = usersSnap.docs.map(async doc => {
+            const data = doc.data();
+            if (data.isAdmin) return null;  // ne s'affiche pas lui-même
+            try {
+                const mSnap = await db.collection('user_maps').doc(doc.id).collection('markers').get();
+                let faitCount = 0, cuveeCount = 0;
+                mSnap.forEach(m => {
+                    if (m.data().statut === 'fait') faitCount++;
+                    const c = m.data().cuvees;
+                    if (Array.isArray(c)) cuveeCount += c.length;
+                });
+                return { uid: doc.id, email: data.email || doc.id, markerCount: mSnap.size, faitCount, cuveeCount };
+            } catch (_) {
+                return { uid: doc.id, email: data.email || doc.id, markerCount: 0, faitCount: 0, cuveeCount: 0 };
+            }
+        });
+        allUsers = (await Promise.all(promises)).filter(Boolean);
+        renderUserList(allUsers);
+    } catch (e) {
+        document.getElementById('users-list-inner').innerHTML =
+            `<div class="users-empty" style="color:#b94040">Erreur : ${e.message}</div>`;
+    }
+}
+
+function renderUserList(users) {
+    const inner = document.getElementById('users-list-inner');
+    if (!users.length) {
+        inner.innerHTML = '<div class="users-empty">Aucun utilisateur trouvé.</div>';
+        return;
+    }
+    inner.innerHTML = users.map(u => `
+        <div class="user-item" data-uid="${esc(u.uid)}" onclick="selectUser('${esc(u.uid)}')">
+            <div class="ui-email">${esc(u.email)}</div>
+            <div class="ui-meta">${u.markerCount} domaine${u.markerCount !== 1 ? 's' : ''} · ${u.faitCount} fait${u.faitCount !== 1 ? 's' : ''} · ${u.cuveeCount} cuvée${u.cuveeCount !== 1 ? 's' : ''}</div>
+        </div>`).join('');
+}
+
+function filterUsers() {
+    const q = document.getElementById('user-search').value.trim().toLowerCase();
+    renderUserList(q ? allUsers.filter(u => u.email.toLowerCase().includes(q)) : allUsers);
+}
+
+// ============================================================
+//  Consultation de la carte d'un utilisateur
+// ============================================================
+async function selectUser(uid) {
+    // Highlight dans la liste
+    document.querySelectorAll('.user-item').forEach(el =>
+        el.classList.toggle('active', el.dataset.uid === uid)
+    );
+
+    const user    = allUsers.find(u => u.uid === uid);
+    const view    = document.getElementById('user-view');
+    view.innerHTML = `<div class="inline-spinner"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div> Chargement de la carte…</div>`;
+
+    try {
+        const mSnap   = await db.collection('user_maps').doc(uid).collection('markers')
+                                .orderBy('createdAt', 'desc').get()
+                                .catch(() => db.collection('user_maps').doc(uid).collection('markers').get());
+        const markers = mSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (!markers.length) {
+            view.innerHTML = `
+                <div class="uv-header">
+                    <div><div class="uv-email">${esc(user?.email || uid)}</div></div>
+                    <span class="readonly-badge">Lecture seule</span>
+                </div>
+                <div class="view-placeholder" style="height:60%">
+                    <div class="icon">🗺</div><p>Cet utilisateur n'a pas encore ajouté de domaine.</p>
+                </div>`;
+            return;
+        }
+
+        const faitCount = markers.filter(m => m.statut === 'fait').length;
+        const cuveeCount = markers.reduce((s, m) => s + (Array.isArray(m.cuvees) ? m.cuvees.length : 0), 0);
+
+        const cardsHtml = markers.map(buildMarkerCard).join('');
+
+        view.innerHTML = `
+            <div class="uv-header">
+                <div>
+                    <div class="uv-email">${esc(user?.email || uid)}</div>
+                    <div class="uv-since">${markers.length} domaine${markers.length > 1 ? 's' : ''} · ${faitCount} fait${faitCount !== 1 ? 's' : ''} · ${cuveeCount} cuvée${cuveeCount !== 1 ? 's' : ''}</div>
+                </div>
+                <span class="readonly-badge">Lecture seule</span>
+            </div>
+            <div class="export-bar">
+                <button class="btn-export" onclick="exportUserCSV('${esc(uid)}','${esc(user?.email || uid)}')">⬇ Exporter CSV</button>
+            </div>
+            ${cardsHtml}`;
+    } catch (e) {
+        view.innerHTML = `<div style="padding:20px;color:#b94040">Erreur de chargement : ${e.message}</div>`;
+    }
+}
+
+function buildMarkerCard(m) {
+    const isFait  = m.statut === 'fait';
+    const cls     = isFait ? 'fait' : 'essayer';
+    const lbl     = isFait ? 'Fait ✓' : 'À essayer';
+    const dept    = m.deptCode ? ` · Dépt. ${m.deptCode}` : '';
+    const cuvees  = Array.isArray(m.cuvees) ? m.cuvees : (typeof m.cuvees === 'string' && m.cuvees ? [{ nom: m.cuvees }] : []);
+    const cuveesHtml = cuvees.length ? buildCuveesHtml(cuvees) : '<p class="no-cuvees">Aucune cuvée renseignée</p>';
+
+    return `
+        <div class="marker-card ${cls}">
+            <div class="mc-header" onclick="this.closest('.marker-card').classList.toggle('open')">
+                <div>
+                    <div class="mc-name">${esc(m.name || '—')}</div>
+                    <div class="mc-address">📍 ${esc(m.address || 'Adresse non renseignée')}${dept}</div>
+                </div>
+                <span class="statut-pill ${cls}">${lbl}</span>
+            </div>
+            <div class="mc-body">${cuveesHtml}</div>
+        </div>`;
+}
+
+function buildCuveesHtml(cuvees) {
+    // Grouper par typeVin
+    const groups = {};
+    VIN_ORDER.forEach(k => groups[k] = []);
+    groups[''] = [];
+    cuvees.forEach(c => {
+        const key = VIN_ORDER.includes(c.typeVin) ? c.typeVin : '';
+        groups[key].push(c);
+    });
+
+    let html = '';
+    VIN_ORDER.forEach(key => {
+        if (!groups[key].length) return;
+        const dot   = VIN_COLORS[key] || '#ccc';
+        const label = VIN_LABELS[key] || key;
+        html += `<div class="cuvee-section-title"><span class="type-dot" style="background:${dot}"></span>${label}s</div>`;
+        html += groups[key].map(c => buildCuveeRow(c)).join('');
+    });
+    if (groups[''].length) {
+        html += `<div class="cuvee-section-title">Autres</div>`;
+        html += groups[''].map(c => buildCuveeRow(c)).join('');
+    }
+    return html;
+}
+
+function buildCuveeRow(c) {
+    const isBue  = c.statut === 'deja_bue';
+    const dot    = VIN_COLORS[c.typeVin] || '#ccc';
+    const meta   = [c.appellation, c.cepage, c.millesime, c.prix ? `${c.prix} €` : ''].filter(Boolean).join(' · ');
+    return `
+        <div class="cuvee-row">
+            <div class="cuvee-top">
+                <span class="type-dot" style="background:${dot}"></span>
+                <span class="cuvee-nom">${esc(c.nom || '—')}</span>
+                <span class="cuvee-tag ${isBue ? 'tag-bue' : 'tag-essayer'}">${isBue ? 'Déjà bue ✓' : 'À essayer'}</span>
+            </div>
+            ${meta          ? `<div class="cuvee-meta">${esc(meta)}</div>` : ''}
+            ${c.tags        ? `<div class="cuvee-meta" style="font-style:italic">🏷 ${esc(c.tags)}</div>` : ''}
+            ${c.commentaire ? `<div class="cuvee-comment">"${esc(c.commentaire)}"</div>` : ''}
+        </div>`;
+}
+
+// ============================================================
+//  Export CSV d'un utilisateur
+// ============================================================
+async function exportUserCSV(uid, email) {
+    const mSnap   = await db.collection('user_maps').doc(uid).collection('markers').get();
+    const markers = mSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const rows    = [['Email','Domaine','Adresse','Département','Statut domaine',
+                      'Cuvée','Type','Appellation','Cépage','Millésime','Prix','Statut cuvée','Commentaire','Mots-clés']];
+    markers.forEach(m => {
+        const cuvees = Array.isArray(m.cuvees) ? m.cuvees : [];
+        if (!cuvees.length) {
+            rows.push([email, m.name||'', m.address||'', m.deptCode||'', m.statut||'', '', '', '', '', '', '', '', '', '']);
+        } else {
+            cuvees.forEach(c => rows.push([email, m.name||'', m.address||'', m.deptCode||'', m.statut||'',
+                c.nom||'', c.typeVin||'', c.appellation||'', c.cepage||'', c.millesime||'', c.prix||'', c.statut||'', c.commentaire||'', c.tags||'']));
+        }
+    });
+    const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: `carte_${email}_${new Date().toISOString().slice(0,10)}.csv` });
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  Utilitaire
+// ============================================================
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
