@@ -99,10 +99,10 @@ function _updateUserButton(email) {
     if (!btn) return;
     if (email) {
         const displayName = userFirstName || email.split('@')[0];
-        btn.textContent = '👤 ' + (displayName.length > 14 ? displayName.slice(0, 14) + '…' : displayName);
+        btn.textContent = (displayName.length > 14 ? displayName.slice(0, 14) + '…' : displayName);
         btn.classList.add('user-logged-in');
     } else {
-        btn.textContent = '👤 Connexion';
+        btn.textContent = 'Connexion';
         btn.classList.remove('user-logged-in');
     }
     _updateFavButton();

@@ -314,13 +314,12 @@
 
     <!-- ===== NAV CARTE ===== -->
     <nav id="carte-nav">
-        <div class="cn-logo" onclick="showLanding()" style="cursor:pointer;">
-            <div class="cn-logo-dot"></div>
-            <span class="cn-brand">Marguerite</span>
-        </div>
+        <!-- Liens de navigation à gauche -->
         <div class="cn-links">
-            <a href="#" onclick="dismissLanding(); return false;" class="cn-link">Accueil</a>
-            <a href="#" class="cn-link active">La Carte</a>
+            <a class="cn-link" href="#" onclick="showLanding(); return false;">Accueil</a>
+            <a class="cn-link active" href="#" onclick="return false;">La Carte</a>
+            <a class="cn-link cn-link-domaines" href="#" onclick="showLanding(); setTimeout(()=>{ document.querySelector('.landing-domaines')?.scrollIntoView({behavior:'smooth'}); }, 300); return false;">Domaines</a>
+            <a class="cn-link" href="#" onclick="return false;">Journal</a>
         </div>
 
         <!-- Barre de recherche globale -->
@@ -328,18 +327,18 @@
             <div id="search-bar">
                 <span id="search-icon" aria-hidden="true">&#9906;</span>
                 <input id="search-input" type="text"
-                       placeholder="Cépage, arôme, lieu, couleur, tanins…"
+                       placeholder="Cépage, lieu, vigneron…"
                        autocomplete="off" spellcheck="false" aria-label="Rechercher un vin">
                 <button id="search-clear" aria-label="Effacer">&#10005;</button>
             </div>
         </div>
 
         <div class="cn-actions">
-            <!-- Barre utilisateur -->
+            <!-- Barre utilisateur (secondaire) -->
             <div id="user-bar">
-                <button id="user-btn" onclick="openAuthModal()">👤 Connexion</button>
+                <button id="user-btn" onclick="openAuthModal()">Connexion</button>
                 <button id="coeur-btn" class="hidden" onclick="showFavoritesPanel()">♥ Coups de Cœur</button>
-                <button id="reseau-btn" class="hidden" onclick="openReseau()">🌐 Mon Réseau</button>
+                <button id="reseau-btn" class="hidden" onclick="openReseau()">Mon Réseau</button>
                 <button id="itin-fab" class="itin-fab hidden" onclick="toggleItinerary()" aria-label="Mon itinéraire de visite">
                     <span class="itin-fab-icon">🗺</span>
                     <span class="itin-fab-label">Mon Itinéraire</span>
@@ -347,11 +346,12 @@
                 </button>
             </div>
             <button id="mes-donnees-btn" class="hidden" onclick="openMesDonnees()">Mes Données</button>
-            <button id="mc-fab" class="hidden" onclick="openMcForm()" aria-label="Ajouter un domaine à Ma Carte">+ Cartes &amp; Cuvées</button>
             <button class="theme-toggle-btn" id="theme-toggle-carte" onclick="toggleTheme()" aria-label="Basculer thème">
                 <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
                 <span class="theme-toggle-icon">🌙</span>
             </button>
+            <!-- Bouton Ma Carte — toujours visible, style sombre -->
+            <button id="mc-fab" onclick="openMcForm()" aria-label="Ma Carte">Ma Carte ✦</button>
         </div>
     </nav>
 

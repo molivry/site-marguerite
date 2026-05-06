@@ -1060,7 +1060,8 @@ body {
 #map-container.ma-carte-mode #france-map path.wine-region.active,
 #map-container.ma-carte-mode #france-map path.wine-region:focus {
   fill: transparent !important;
-  stroke: none !important;
+  stroke: var(--green-mid) !important;
+  stroke-width: 0.5 !important;
   cursor: default;
   pointer-events: none;
   outline: none;
@@ -4366,16 +4367,12 @@ body.reseau-open #reseau-panel { display: flex; }
 /* --- Carousel ---------------------------------------------- */
 .landing-carousel-wrap {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  max-height: 560px;
+  width: 100%;
 }
 
 .landing-carousel {
   width: 100%;
-  height: 100%;
-  min-height: 380px;
-  max-height: 560px;
+  aspect-ratio: 5 / 4;
   border-radius: 12px;
   overflow: hidden;
   background: #EDE0CB;
@@ -4495,10 +4492,6 @@ body.reseau-open #reseau-panel { display: flex; }
 
   .landing-hero-right {
     padding-left: 0;
-  }
-
-  .landing-carousel-wrap {
-    max-height: 280px;
   }
 
   .landing-explore-btn {
@@ -5242,16 +5235,14 @@ html.dark #user-btn,
 html.dark #coeur-btn,
 html.dark #reseau-btn,
 html.dark #mes-donnees-btn,
-html.dark #mc-fab {
-  background: #162a1a;
-  color: #d8e8d0;
-  border-color: rgba(138,186,136,0.15);
-}
 html.dark #user-btn:hover,
 html.dark #coeur-btn:hover,
 html.dark #reseau-btn:hover { background: #1e3422; }
-html.dark #mc-fab { background: var(--gold); color: white; border-color: var(--gold); }
-html.dark #mc-fab:hover { background: #b86020; }
+html.dark #mc-fab { background: #f0e8d8; color: #1a1a1a; }
+html.dark #mc-fab:hover { background: #e0d0b8; }
+html.dark .cn-link { color: #d8e8d0; }
+html.dark .cn-link.active { border-bottom-color: var(--gold); }
+html.dark .cn-link-domaines { border-color: #d8e8d0; }
 
 /* ── France map ── */
 html.dark #france-map path {
@@ -5386,18 +5377,31 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(138,186,136,0.35); 
   letter-spacing: 0.01em;
 }
 
-.cn-links { display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
+.cn-links { display: flex; align-items: center; gap: 28px; flex-shrink: 0; }
 .cn-link {
   font-family: var(--font-body);
-  font-size: 13px; font-weight: 500;
+  font-size: 13px; font-weight: 400;
   color: var(--cd-warm-black); text-decoration: none;
-  opacity: 0.55; transition: opacity 0.2s;
+  opacity: 0.65; transition: opacity 0.2s;
+  padding-bottom: 2px;
 }
 .cn-link:hover { opacity: 1; }
-.cn-link.active { opacity: 1; color: var(--cd-orange); }
+.cn-link.active {
+  opacity: 1;
+  font-weight: 700;
+  border-bottom: 2px solid var(--cd-orange);
+  padding-bottom: 0;
+}
+.cn-link-domaines {
+  opacity: 1;
+  border: 1.5px solid var(--cd-warm-black);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-weight: 500;
+}
 
 /* Barre de recherche dans la nav */
-#carte-nav #search-container { flex: 1; max-width: 280px; }
+#carte-nav #search-container { flex: 1; max-width: 340px; }
 #carte-nav #search-bar {
   background: var(--cd-cream-dk);
   border-radius: 100px;
@@ -5411,7 +5415,7 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(138,186,136,0.35); 
   box-shadow: 0 0 0 2px rgba(196,102,31,0.12);
 }
 #carte-nav #search-icon { color: var(--cd-muted); font-size: 14px; }
-#carte-nav #search-input { font-size: 13px; color: var(--cd-warm-black); width: 180px; }
+#carte-nav #search-input { font-size: 13px; color: var(--cd-warm-black); width: 220px; }
 #carte-nav #search-input::placeholder { color: var(--cd-muted); }
 
 /* Actions à droite */
@@ -5433,16 +5437,18 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(138,186,136,0.35); 
 #carte-nav #reseau-btn:hover,
 #carte-nav #mes-donnees-btn:hover { background: var(--cd-cream-dk); }
 
-/* Bouton Ma Carte — pill orange */
+/* Bouton Ma Carte — pill sombre toujours visible */
 #carte-nav #mc-fab {
-  font-family: var(--font-body); font-size: 12px; font-weight: 600;
-  background: var(--cd-orange); color: white;
-  padding: 8px 20px; border-radius: 100px; border: none;
-  cursor: pointer; letter-spacing: 0.02em;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  background: #1a1a1a; color: white;
+  padding: 9px 22px; border-radius: 100px; border: none;
+  cursor: pointer; letter-spacing: 0.01em;
   transition: opacity 0.2s; box-shadow: none;
   transform: none !important;
+  display: flex !important; align-items: center; gap: 6px;
+  white-space: nowrap;
 }
-#carte-nav #mc-fab:hover { opacity: 0.85; transform: none !important; }
+#carte-nav #mc-fab:hover { opacity: 0.8; transform: none !important; }
 
 /* ── Map container — décalé nav (56px) + panneau droit (400px) ── */
 #map-container {

@@ -695,6 +695,7 @@ function showMcMarkerInfo(markerId) {
     const color  = isFait ? '#1C4220' : '#C4661F';
     const label  = isFait ? 'Fait ✓' : 'À essayer';
 
+    const _inItin = typeof isInItineraryMc !== 'undefined' && isInItineraryMc(markerId);
     const panel = document.getElementById('mc-info-panel');
     panel.innerHTML = `
         <div class="mc-ip-header">
@@ -704,6 +705,13 @@ function showMcMarkerInfo(markerId) {
         <h3 class="mc-ip-name">${_esc(m.name)}</h3>
         ${m.address ? `<p class="mc-ip-address">📍 ${_esc(m.address)}</p>` : ''}
         ${_renderCuveesReadHtml(m.cuvees)}
+        <button class="btn-add-to-itin ${_inItin ? 'added' : ''}"
+                data-mc-id="${markerId}"
+                onclick="addMcMarkerToItinerary('${markerId}')"
+                ${_inItin ? 'disabled' : ''}>
+            <span class="btn-add-to-itin-icon">${_inItin ? '✓' : '+'}</span>
+            ${_inItin ? 'Dans votre itinéraire' : 'Ajouter à mon itinéraire'}
+        </button>
         <div class="mc-ip-actions">
             <button class="mc-edit-btn" onclick="_renderMcInfoEdit('${markerId}')">✏ Modifier</button>
             <button class="mc-delete-btn" onclick="confirmDeleteMcMarker('${markerId}')">Supprimer</button>

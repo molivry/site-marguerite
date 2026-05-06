@@ -1811,6 +1811,53 @@ function isInItinerary(regionId, domaineIdx) {
     );
 }
 
+function isInItineraryMc(markerId) {
+    return itineraryItems.some(item => item.mcMarkerId === markerId);
+}
+
+function addMcMarkerToItinerary(markerId) {
+    if (isInItineraryMc(markerId)) {
+        itinToast('Déjà dans votre itinéraire 😊');
+        return;
+    }
+    const m = typeof maCarteMarkers !== 'undefined' && maCarteMarkers[markerId];
+    if (!m) return;
+
+    itineraryItems.push({
+        id:         `mc_${markerId}`,
+        mcMarkerId: markerId,
+        name:       m.name,
+        location:   m.address || m.name,
+        x:          m.x,
+        y:          m.y
+    });
+    itineraryOptimized = false;
+
+    renderItinerary();
+    updateItinFab();
+    itinFabPulse();
+    updateMcItinBtn(markerId);
+
+    if (itineraryItems.length === 1) openItinerary();
+
+    itinToast(`📍 ${m.name} ajouté à l'itinéraire !`);
+}
+
+function updateMcItinBtn(markerId) {
+    const btn = document.querySelector(`.btn-add-to-itin[data-mc-id="${markerId}"]`);
+    if (!btn) return;
+    const inItin = isInItineraryMc(markerId);
+    if (inItin) {
+        btn.classList.add('added');
+        btn.innerHTML = '<span class="btn-add-to-itin-icon">✓</span> Dans votre itinéraire';
+        btn.disabled  = true;
+    } else {
+        btn.classList.remove('added');
+        btn.innerHTML = '<span class="btn-add-to-itin-icon">+</span> Ajouter à mon itinéraire';
+        btn.disabled  = false;
+    }
+}
+
 // Distance crow-fly × facteur route, en km
 function itinCalcDistance(a, b) {
     const dx = (a.x - b.x) * ITIN_KM_PER_X;
@@ -1878,13 +1925,16 @@ function addToItinerary(regionId, domaineIdx) {
 }
 
 function removeFromItinerary(id) {
-    itineraryItems = itineraryItems.filter(item => item.id !== id);
+    const item = itineraryItems.find(i => i.id === id);
+    itineraryItems = itineraryItems.filter(i => i.id !== id);
     itineraryOptimized = false;
     renderItinerary();
     updateItinFab();
-    // Rafraîchir bouton si encore sur la fiche
-    const [regionId, domaineIdx] = id.split('_');
-    updateAddToItinBtn(regionId, parseInt(domaineIdx));
+    if (item && item.mcMarkerId) {
+        updateMcItinBtn(item.mcMarkerId);
+    } else if (item) {
+        updateAddToItinBtn(item.regionId, item.domaineIdx);
+    }
 }
 
 function clearItinerary() {
@@ -2185,16 +2235,19 @@ document.addEventListener('keydown', e => {
    ============================================================ */
 
 const LANDING_PHOTOS = [
-    'images/landing/275E8150-9678-4952-BE72-532B43334D09_1_201_a.jpeg',
-    'images/landing/64238034-5D3A-4E7C-9BD4-2E8B651AAA0E_1_201_a.jpeg',
-    'images/landing/F2D3E608-20FE-4C04-9F38-73841AD4CAE3_1_201_a.jpeg',
-    'images/landing/BC3B0B15-2B8B-434B-8656-1991C155B9C6_1_201_a.jpeg',
-    'images/landing/6E42FE66-9255-46C8-87A0-0294616874FD_1_201_a.jpeg',
-    'images/landing/5973FD03-9259-4373-BD46-29098ADD5EA1_1_102_a.jpeg',
-    'images/landing/EC907C81-4389-4360-BE46-72DB19921935_1_201_a.jpeg',
-    'images/landing/3652FF83-78EE-45BA-B917-D09785E0B217_1_201_a.jpeg',
-    'images/landing/9AAF2EDE-D023-4AB1-BC9E-FBCD99156600_1_201_a.jpeg',
-    'images/landing/74DDF7CA-DB7D-456F-BFFC-B43A1E141B01_1_105_c.jpeg',
+    'images/IMG_8245.JPG',
+    'images/IMG_8246.JPG',
+    'images/IMG_8247.JPG',
+    'images/IMG_8248.JPG',
+    'images/IMG_8249.JPG',
+    'images/IMG_8250.JPG',
+    'images/IMG_8251.JPG',
+    'images/IMG_8252.JPG',
+    'images/IMG_8253.JPG',
+    'images/IMG_8254.JPG',
+    'images/IMG_8255.JPG',
+    'images/IMG_8256.JPG',
+    'images/IMG_8257.JPG',
 ];
 
 let landingSlideIndex = 0;
