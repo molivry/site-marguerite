@@ -314,9 +314,13 @@
 
     <!-- ===== NAV CARTE ===== -->
     <nav id="carte-nav">
-        <!-- Liens de navigation à gauche -->
+        <!-- Logo à gauche -->
+        <div class="cn-logo" onclick="showLanding()" style="cursor:pointer;">
+            <div class="cn-logo-dot"></div>
+            <span class="cn-brand">Marguerite</span>
+        </div>
+        <!-- Liens de navigation -->
         <div class="cn-links">
-            <a class="cn-link" href="#" onclick="showLanding(); return false;">Accueil</a>
             <a class="cn-link active" href="#" onclick="return false;">La Carte</a>
             <a class="cn-link cn-link-domaines" href="#" onclick="showLanding(); setTimeout(()=>{ document.querySelector('.landing-domaines')?.scrollIntoView({behavior:'smooth'}); }, 300); return false;">Domaines</a>
             <a class="cn-link" href="#" onclick="return false;">Journal</a>
