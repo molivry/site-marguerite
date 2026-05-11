@@ -5099,234 +5099,6 @@ body.reseau-open #reseau-panel { display: flex; }
   }
 }
 
-/* ============================================================
-   THEME TOGGLE BUTTON
-   ============================================================ */
-.theme-toggle-btn {
-  display: flex; align-items: center; gap: 7px;
-  background: none; border: none; cursor: pointer;
-  padding: 5px 10px; border-radius: 100px;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-.theme-toggle-btn:hover { background: rgba(0,0,0,0.06); }
-html.dark .theme-toggle-btn:hover { background: rgba(255,255,255,0.08); }
-
-.theme-toggle-track {
-  width: 36px; height: 20px; border-radius: 100px;
-  background: var(--green-light);
-  display: flex; align-items: center;
-  padding: 2px; transition: background 0.3s;
-  flex-shrink: 0;
-}
-html.dark .theme-toggle-track { background: var(--rv2-orange); }
-
-.theme-toggle-thumb {
-  width: 16px; height: 16px; border-radius: 50%;
-  background: white;
-  transform: translateX(0);
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-}
-html.dark .theme-toggle-thumb { transform: translateX(16px); }
-
-.theme-toggle-icon { font-size: 14px; line-height: 1; }
-
-/* ============================================================
-   DARK MODE — palette inspirée du panneau Réseau v2
-   ============================================================ */
-html.dark {
-  color-scheme: dark;
-  /* Fond principal : vert forêt très sombre, dérivé du #1C4220 du site */
-  --cream:       #0d1a10;
-  --beige:       #091209;
-  --white:       #162a1a;
-  --text:        #d8e8d0;
-  /* Verts inversés : les accents deviennent clairs sur fond sombre */
-  --green-dark:  #8aba88;
-  --green-mid:   #5a8a60;
-  --green-light: #2e5c3a;
-  /* Or légèrement plus lumineux pour contraste sur fond vert */
-  --gold:        #d4772a;
-}
-
-/* ── Body & base ── */
-html.dark body { background: #091209; color: #d8e8d0; }
-
-/* ── Landing overlay ── */
-html.dark .landing-overlay { background: #091209; }
-html.dark .landing-overlay::before { opacity: 0.015; }
-html.dark .landing-nav {
-  background: rgba(9,18,9,0.92);
-  border-bottom: 1px solid rgba(138,186,136,0.1);
-}
-html.dark .landing-nav-brand { color: #d8e8d0; }
-html.dark .landing-nav-dot { background: var(--gold); }
-html.dark .landing-nav-cta {
-  background: var(--gold); color: white; border-color: var(--gold);
-}
-html.dark .landing-label { color: var(--gold); opacity: 0.85; }
-html.dark .landing-title-main,
-html.dark .landing-title-italic { color: #d8e8d0; }
-html.dark .landing-title-italic { color: var(--gold); }
-html.dark .landing-sun { background: var(--gold); opacity: 0.9; }
-html.dark .landing-sun::after { border-color: var(--gold); opacity: 0.35; }
-html.dark .landing-stat-num { color: #d8e8d0; }
-html.dark .landing-stat-lbl { color: rgba(200,225,195,0.55); }
-html.dark .landing-stat-sep { background: rgba(138,186,136,0.2); }
-html.dark .landing-carousel-wrap { background: #0d1a10; }
-html.dark .landing-dot { background: rgba(138,186,136,0.3); }
-html.dark .landing-dot.active { background: var(--gold); }
-html.dark .landing-desc { color: rgba(200,225,195,0.65); }
-html.dark .landing-explore-btn {
-  background: var(--gold); color: white;
-  box-shadow: 0 4px 20px rgba(212,119,42,0.35);
-}
-
-/* Landing sections */
-html.dark .landing-etapes { background: #0d1a10; }
-html.dark .landing-etape-card {
-  background: #162a1a; border-color: rgba(138,186,136,0.1);
-}
-html.dark .landing-etape-card:hover { border-color: rgba(212,119,42,0.4); }
-html.dark .landing-etape-num { color: rgba(212,119,42,0.45); }
-html.dark .landing-etape-name { color: #d8e8d0; }
-html.dark .landing-etape-desc { color: rgba(200,225,195,0.55); }
-html.dark .landing-domaines { background: #091209; }
-html.dark .landing-domain-card {
-  background: #162a1a; border-color: rgba(138,186,136,0.1);
-}
-html.dark .landing-domain-card:hover { border-color: rgba(212,119,42,0.35); }
-html.dark .landing-domain-name { color: #d8e8d0; }
-html.dark .landing-domain-region,
-html.dark .landing-domain-desc { color: rgba(200,225,195,0.55); }
-html.dark .landing-footer { background: #0d1a10; border-top-color: rgba(138,186,136,0.1); }
-html.dark .landing-footer-brand { color: #d8e8d0; }
-html.dark .landing-footer-copy,
-html.dark .landing-footer-link { color: rgba(200,225,195,0.45); }
-
-/* ── Carte nav ── */
-html.dark #carte-nav {
-  background: #0d1a10;
-  border-bottom: 1px solid rgba(138,186,136,0.1);
-  box-shadow: none;
-}
-html.dark .cn-brand { color: #d8e8d0; }
-html.dark .cn-logo-dot { background: var(--gold); }
-html.dark .cn-link { color: rgba(200,225,195,0.5); }
-html.dark .cn-link.active,
-html.dark .cn-link:hover { color: #d8e8d0; }
-html.dark .cn-link.active::after { background: var(--gold); }
-
-/* ── Search ── */
-html.dark #search-bar {
-  background: #162a1a;
-  border-color: rgba(138,186,136,0.15);
-  color: #d8e8d0;
-}
-html.dark #search-input { color: #d8e8d0; background: transparent; }
-html.dark #search-input::placeholder { color: rgba(200,225,195,0.35); }
-html.dark #search-icon { color: rgba(200,225,195,0.45); }
-html.dark #search-clear { color: rgba(200,225,195,0.45); }
-html.dark #search-bar:focus-within { border-color: rgba(212,119,42,0.5); }
-
-/* ── User bar buttons ── */
-html.dark #user-btn,
-html.dark #coeur-btn,
-html.dark #reseau-btn,
-html.dark #mes-donnees-btn,
-html.dark #user-btn:hover,
-html.dark #coeur-btn:hover,
-html.dark #reseau-btn:hover { background: #1e3422; }
-html.dark #mc-fab { background: #f0e8d8; color: #1a1a1a; }
-html.dark #mc-fab:hover { background: #e0d0b8; }
-html.dark .cn-link { color: #d8e8d0; }
-html.dark .cn-link.active { border-bottom-color: var(--gold); }
-html.dark .cn-link-domaines { border-color: #d8e8d0; }
-
-/* ── France map ── */
-html.dark #france-map path {
-  fill: #142018 !important;
-  stroke: #1e3422 !important;
-}
-html.dark #france-map path.viticole { fill: #1c4228 !important; }
-html.dark #france-map path:hover,
-html.dark #france-map path.hovered { fill: #243c28 !important; }
-html.dark #france-map path.selected { fill: var(--gold) !important; }
-
-/* ── Info panel (domain detail) ── */
-html.dark #info-panel {
-  background: #0d1a10;
-  border-color: rgba(138,186,136,0.1);
-  color: #d8e8d0;
-}
-html.dark #ip-header { background: #162a1a; border-bottom-color: rgba(138,186,136,0.1); }
-html.dark .ip-title { color: #d8e8d0; }
-html.dark .ip-close { color: rgba(200,225,195,0.5); }
-html.dark .ip-close:hover { background: rgba(138,186,136,0.1); color: #d8e8d0; }
-html.dark .domain-card {
-  background: #162a1a;
-  border-color: rgba(138,186,136,0.1);
-}
-html.dark .domain-card:hover { border-color: rgba(212,119,42,0.35); background: #1e3422; }
-html.dark .domain-name { color: #d8e8d0; }
-html.dark .domain-region,
-html.dark .domain-desc,
-html.dark .domain-note { color: rgba(200,225,195,0.55); }
-html.dark .wine-badge { background: rgba(212,119,42,0.18); color: var(--gold); }
-
-/* ── Ma Carte panel ── */
-html.dark #md-panel {
-  background: #0d1a10;
-  border-color: rgba(138,186,136,0.1);
-  color: #d8e8d0;
-}
-html.dark #md-header { background: #162a1a; border-bottom-color: rgba(138,186,136,0.1); }
-html.dark #md-tabs { background: #0d1a10; border-bottom-color: rgba(138,186,136,0.1); }
-html.dark .md-tab {
-  color: rgba(200,225,195,0.45);
-  border-bottom-color: transparent;
-}
-html.dark .md-tab.active,
-html.dark .md-tab:hover { color: #d8e8d0; border-bottom-color: var(--gold); }
-
-/* ── Auth modal ── */
-html.dark #auth-modal {
-  background: rgba(0,0,0,0.75);
-}
-html.dark #auth-box {
-  background: #0d1a10;
-  border-color: rgba(138,186,136,0.15);
-  color: #d8e8d0;
-}
-html.dark .auth-input {
-  background: #162a1a;
-  border-color: rgba(138,186,136,0.15);
-  color: #d8e8d0;
-}
-html.dark .auth-input:focus { border-color: rgba(212,119,42,0.5); }
-html.dark .auth-input::placeholder { color: rgba(200,225,195,0.35); }
-
-/* ── Map indicator / tooltip ── */
-html.dark #map-indicator {
-  background: #162a1a;
-  color: #d8e8d0;
-  border-color: rgba(138,186,136,0.15);
-}
-html.dark .map-tooltip {
-  background: #162a1a;
-  color: #d8e8d0;
-  border-color: rgba(138,186,136,0.1);
-}
-
-/* ── Scrollbars in dark mode ── */
-html.dark ::-webkit-scrollbar-track { background: #0d1a10; }
-html.dark ::-webkit-scrollbar-thumb {
-  background: rgba(138,186,136,0.2);
-  border-color: #0d1a10;
-}
-html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(138,186,136,0.35); }
-
 
 
 
@@ -5380,25 +5152,15 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(138,186,136,0.35); 
 .cn-links { display: flex; align-items: center; gap: 28px; flex-shrink: 0; }
 .cn-link {
   font-family: var(--font-body);
-  font-size: 13px; font-weight: 400;
+  font-size: 13px; font-weight: 700;
   color: var(--cd-warm-black); text-decoration: none;
-  opacity: 0.65; transition: opacity 0.2s;
-  padding-bottom: 2px;
-}
-.cn-link:hover { opacity: 1; }
-.cn-link.active {
   opacity: 1;
-  font-weight: 700;
   border-bottom: 2px solid var(--cd-orange);
   padding-bottom: 0;
+  transition: opacity 0.2s;
 }
-.cn-link-domaines {
-  opacity: 1;
-  border: 1.5px solid var(--cd-warm-black);
-  border-radius: 6px;
-  padding: 3px 10px;
-  font-weight: 500;
-}
+.cn-link:hover { opacity: 0.75; }
+.cn-link.active { opacity: 1; }
 
 /* Barre de recherche dans la nav */
 #carte-nav #search-container { flex: 1; max-width: 340px; }
@@ -5440,7 +5202,7 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(138,186,136,0.35); 
 /* Bouton Ma Carte — pill sombre toujours visible */
 #carte-nav #mc-fab {
   font-family: var(--font-body); font-size: 13px; font-weight: 600;
-  background: #1a1a1a; color: white;
+  background: #C4661F; color: #F5EDD8;
   padding: 9px 22px; border-radius: 100px; border: none;
   cursor: pointer; letter-spacing: 0.01em;
   transition: opacity 0.2s; box-shadow: none;

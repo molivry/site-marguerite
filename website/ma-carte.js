@@ -1485,3 +1485,78 @@ function renderMdDepartements() {
         }).join('')}
     </div>`;
 }
+
+// ============================================================
+//  Redirection depuis Ma Carte.html — activation auto
+//
+//  Si l'utilisateur a cliqué "Activer →" sur Ma Carte.html,
+//  localStorage contient 'mc_pendingMapId'.
+//  On attend que Firebase soit prêt + utilisateur connecté,
+//  puis on active automatiquement la bonne carte personnelle.
+// ============================================================
+(function _initPendingMap() {
+    const pendingId = localStorage.getItem('mc_pendingMapId');
+    if (!pendingId) return;
+    localStorage.removeItem('mc_pendingMapId');
+
+    // ── 0. Masquer le landing immédiatement ──────────────────
+    //  Ce script s'exécute pendant le parsing du body (les scripts
+    //  sont en milieu de page), donc #landing-overlay est déjà
+    //  dans le DOM. On le cache avant même qu'il soit affiché.
+    const _hideLanding = () => {
+        const overlay = document.getElementById('landing-overlay');
+        if (overlay) {
+            overlay.style.cssText = 'display:none!important;visibility:hidden;opacity:0;pointer-events:none;';
+            overlay.classList.add('hidden');
+        }
+        // Si dismissLanding() existe (définie dans app.js), l'appeler aussi
+        if (typeof dismissLanding === 'function') dismissLanding();
+    };
+
+    // Exécuter dès que possible (DOM déjà partiellement parsé ici)
+    _hideLanding();
+    // Sécurité : aussi sur DOMContentLoaded au cas où
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _hideLanding, { once: true });
+    }
+
+    // ── 1–3. Attendre Firebase + auth puis activer la carte ──
+    let _attempts = 0;
+    const _poll = setInterval(() => {
+        _attempts++;
+        // Timeout de sécurité : 8 secondes
+        if (_attempts > 53) { clearInterval(_poll); return; }
+        // Attendre Firebase prêt ET utilisateur connecté
+        if (typeof firebaseReady === 'undefined' || !firebaseReady) return;
+        if (typeof currentUser === 'undefined' || !currentUser) return;
+
+        clearInterval(_poll);
+
+        // 1. Fixer la carte active AVANT le chargement des marqueurs
+        activeMapId = pendingId;
+
+        // 2. Activer le mode Ma Carte (si pas encore actif)
+        if (!maCarteActive) {
+            maCarteActive = true;
+            const fab       = document.getElementById('mc-fab');
+            const container = document.getElementById('map-container');
+            if (fab)       fab.classList.remove('hidden');
+            if (container) container.classList.add('ma-carte-mode');
+
+            // Réinitialiser la vue officielle
+            const svg = document.getElementById('france-map');
+            if (svg) {
+                svg.querySelectorAll('.wine-region.active').forEach(p => p.classList.remove('active'));
+                if (typeof initialViewBox !== 'undefined' && initialViewBox) {
+                    svg.setAttribute('viewBox', initialViewBox.join(' '));
+                }
+            }
+            const infoPanelOfficiel = document.getElementById('info-panel');
+            if (infoPanelOfficiel) infoPanelOfficiel.classList.remove('visible');
+        }
+
+        // 3. Charger les marqueurs de la carte sélectionnée
+        loadUserMarkers();
+        updateMapIndicator();
+    }, 150);
+})();

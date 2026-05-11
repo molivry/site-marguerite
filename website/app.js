@@ -157,7 +157,7 @@ const WINE_DATA = {
                 x: 555, y: 295,
                 location_details: "<i>À Pupillin</i> - 6,25 hectares - Bio & Biodynamie",
                 description: "Situé dans la capitale du Ploussard, ce domaine de 6,25 hectares est une pépite montante du Jura. Repris par Benjamin Benoit, le vignoble est mené en bio avec une précision chirurgicale. Sa philosophie ? Une approche micro-parcellaire pour des vins qui misent tout sur l'élégance et la finesse.",
-                images: ["images/Cellier1.webp", "images/Cellier2.webp"],
+                images: [],
                 wines: [
                     {
                         category: "Les Blancs",
@@ -215,7 +215,7 @@ const WINE_DATA = {
             {
                 name: "Domaine Valentin Morel (Les Pieds sur Terre)",
                 x: 560, y: 305,
-                location_details: "Poligny - 8 hectares - Bio & Biodynamie",
+                location_details: "À Poligny - 8 hectares - Bio & Biodynamie",
                 description: "Valentin Morel n'est pas qu'un vigneron, c'est un intellectuel de la vigne. Ici, on réfléchit au sens du métier, on défend les cépages résistants (hybrides) et on travaille sans filet.",
                 wines: [
                     {
@@ -427,7 +427,7 @@ const WINE_DATA = {
                 x: 228, y: 268,
                 location_details: "À Saint Philbert de Grand Lieu - 30 hectares - Bio",
                 description: "Certifié en Agriculture Biologique depuis 2016, Éric et sa sœur Gaëlle poursuivent la quête de vins francs, salins et sains. Leur philosophie : laisser le terroir océanique, riche en schistes et roches métamorphiques, s'exprimer sans filtre, avec une intervention humaine minimale mais experte, pour des cuvées d'une fraîcheur et d'une finesse remarquables. C'est l'essence même du Muscadet, mais avec une vision résolument contemporaine.",
-                images: ["images/chevalier-vignes.jpg", "images/chevalier-bouteilles.jpg", "images/chevalier-travail.jpg"],
+                images: [],
                 wines: [
                     {
                         category: "Les Blancs",
@@ -490,7 +490,7 @@ const WINE_DATA = {
                 name: 'Jean-Baptiste Hardy',
                 x: 235, y: 245,
                 location_details: "À Mouzillon - 8,5 hectares - Bio",
-                images: ["images/hardy-dessin.jpg", "images/hardy-eclats.jpg"],
+                images: [],
                 description: "Installé au cœur de l'appellation Muscadet Sèvre-et-Maine, Jean-Baptiste Hardy incarne la nouvelle génération de vignerons ligériens. Après un parcours initiatique chez les plus grands (Domaine Roulot, Leflaive, Nouvelle-Zélande, Patagonie), il applique une technicité de pointe à son domaine familial cultivé en Agriculture Biologique. Sur des terroirs volcaniques de Gabbro, sa philosophie est d'allier une précision et une élégance tout en restant fidèle à la salinité nantaise. C'est l'harmonie parfaite entre un savoir-faire international et la profondeur du terroir local.",
                 wines: [
                     {
@@ -2489,4 +2489,10 @@ function dismissLanding() {
 }
 
 // Init on DOM ready
-document.addEventListener('DOMContentLoaded', initLanding);
+document.addEventListener('DOMContentLoaded', () => {
+    initLanding();
+    if (window.location.hash === '#carte') {
+        history.replaceState(null, '', window.location.pathname);
+        dismissLanding();
+    }
+});

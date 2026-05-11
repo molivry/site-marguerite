@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ma Carte · Marguerite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream:      oklch(94% 0.016 75);
+      --paper:      oklch(97% 0.012 75);
+      --card:       #ffffff;
+      --tile:       oklch(96% 0.012 75);
+      --forest:     oklch(30% 0.08 148);
+      --forest-mid: oklch(42% 0.09 145);
+      --sage:       oklch(57% 0.07 138);
+      --orange:     oklch(63% 0.17 42);
+      --warm-black: oklch(20% 0.02 60);
+      --ink:        oklch(28% 0.015 60);
+      --muted:      oklch(45% 0.01 75);
+      --muted-2:    oklch(55% 0.01 75);
+      --line:       rgba(0,0,0,0.07);
+      --line-soft:  rgba(0,0,0,0.04);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--warm-black);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; mix-blend-mode: multiply; opacity: 0.6;
+    }
+    h1,h2,h3,h4 { font-family: 'Playfair Display', serif; color: var(--warm-black); }
+
+    /* Login gate */
+    #login-gate {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 32px;
+    }
+    .gate-card {
+      background: var(--card); border-radius: 20px; padding: 48px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.12); max-width: 420px; width: 100%; text-align: center;
+    }
+    .gate-logo { font-family: 'Playfair Display', serif; font-size: 1.4em; font-style: italic; color: var(--forest); margin-bottom: 4px; }
+    .gate-sub { font-size: .85em; color: #888; margin-bottom: 28px; }
+    .gate-card h2 { font-family: 'Playfair Display', serif; font-size: 1.4em; color: var(--forest); margin-bottom: 8px; }
+    .gate-card p { font-size: .88em; color: #666; margin-bottom: 20px; }
+    .gate-input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid oklch(90% 0.012 75);
+      border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .92em; margin-bottom: 10px;
+      outline: none; transition: border-color .2s; background: var(--cream);
+    }
+    .gate-input:focus { border-color: var(--forest); background: white; }
+    .gate-btn {
+      width: 100%; padding: 12px; background: var(--forest); color: white; border: none;
+      border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .95em; font-weight: 600;
+      cursor: pointer; margin-top: 6px; transition: background .2s;
+    }
+    .gate-btn:hover { background: var(--forest-mid); }
+    .gate-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .gate-error { color: #c0392b; font-size: .85em; margin-top: 10px; text-align: left; }
+    .gate-switch { margin-top: 20px; font-size: .85em; color: #888; }
+    .gate-switch a { color: var(--forest); font-weight: 600; cursor: pointer; text-decoration: none; }
+    #gate-firstname-wrap { display: none; }
+    #gate-firstname-wrap.visible { display: block; }
+
+    /* Nav */
+    .mc-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 28px;
+      padding: 0 32px; height: 56px;
+    }
+    .mc-nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Playfair Display', serif; font-size: .95em; font-weight: 700;
+      color: var(--forest); text-decoration: none;
+    }
+    .mc-nav-logo-circle {
+      width: 30px; height: 30px; border-radius: 50%; background: var(--orange);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .mc-nav-logo-circle svg { width: 14px; height: 14px; }
+    .mc-nav-links { display: flex; gap: 4px; margin-left: 8px; }
+    .mc-nav-link {
+      font-size: .85em; color: var(--muted); text-decoration: none;
+      padding: 6px 12px; border-radius: 8px; transition: background .15s, color .15s;
+    }
+    .mc-nav-link:hover { background: var(--line-soft); color: var(--warm-black); }
+    .mc-nav-link.active { color: var(--forest); font-weight: 600; }
+    .mc-nav-spacer { flex: 1; }
+    .mc-nav-cta {
+      padding: 8px 16px; border-radius: 20px; background: var(--orange); color: white;
+      border: none; font-family: 'DM Sans', sans-serif; font-size: .85em; font-weight: 600;
+      cursor: pointer; transition: opacity .2s;
+    }
+    .mc-nav-cta:hover { opacity: .88; }
+
+    /* Hero */
+    .mc-hero {
+      background: var(--forest);
+      padding: 52px 32px 0;
+      position: relative; overflow: hidden;
+    }
+    .mc-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 80% 50%, oklch(38% 0.09 145) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .mc-hero-top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      max-width: 1160px; margin: 0 auto; position: relative;
+    }
+    .mc-hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2em, 5vw, 3.6em);
+      font-weight: 900; color: var(--cream); line-height: 1.08;
+      margin-bottom: 6px;
+    }
+    .mc-hero-title em { color: var(--orange); font-style: italic; }
+    .mc-hero-sub {
+      font-size: .95em; color: oklch(75% 0.04 140); margin-top: 8px;
+    }
+    .mc-hero-counters {
+      display: flex; gap: 32px; flex-shrink: 0; padding-top: 6px;
+    }
+    .mc-hero-counter { text-align: right; }
+    .mc-hero-counter-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8em; font-weight: 900; color: var(--orange); line-height: 1;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    .mc-hero-counter-label { font-size: .78em; color: oklch(70% 0.04 140); margin-top: 2px; }
+
+    /* Tabs in hero */
+    .mc-tabs {
+      display: flex; gap: 4px;
+      max-width: 1160px; margin: 36px auto 0;
+      position: relative;
+    }
+    .mc-tab-btn {
+      padding: 12px 20px; border-radius: 12px 12px 0 0;
+      border: none; background: transparent;
+      font-family: 'DM Sans', sans-serif; font-size: .88em; font-weight: 500;
+      color: oklch(68% 0.04 140); cursor: pointer; transition: all .2s;
+    }
+    .mc-tab-btn:hover { background: rgba(255,255,255,.08); color: var(--cream); }
+    .mc-tab-btn.active {
+      background: var(--cream); color: var(--forest); font-weight: 600;
+    }
+
+    /* Main layout */
+    .mc-main {
+      max-width: 1160px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 300px;
+      gap: 32px; padding: 32px;
+    }
+    .mc-content {}
+    .mc-sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+    /* Cards */
+    .mc-card {
+      background: var(--card); border-radius: 16px;
+      border: 1px solid var(--line); overflow: hidden;
+    }
+    .mc-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .mc-card-title {
+      font-family: 'Playfair Display', serif; font-size: 1.05em;
+      color: var(--warm-black); font-weight: 700;
+    }
+    .mc-card-body { padding: 16px 20px; }
+
+    /* Maps list */
+    .mc-map-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid var(--line-soft);
+    }
+    .mc-map-row:last-child { border-bottom: none; }
+    .mc-map-row.active-map .mc-map-name { color: var(--forest); font-weight: 600; }
+    .mc-map-name { font-size: .95em; color: var(--warm-black); }
+    .mc-map-count { font-size: .8em; color: var(--muted); margin-top: 2px; }
+    .mc-map-actions { display: flex; gap: 6px; align-items: center; }
+    .mc-badge-active {
+      font-size: .75em; font-weight: 600; padding: 4px 10px;
+      background: oklch(93% 0.04 148); color: var(--forest);
+      border-radius: 20px;
+    }
+    .mc-btn-sm {
+      padding: 5px 11px; border-radius: 8px; border: 1.5px solid var(--line);
+      background: white; font-family: 'DM Sans', sans-serif; font-size: .8em;
+      cursor: pointer; transition: all .15s; color: var(--warm-black);
+    }
+    .mc-btn-sm:hover { border-color: var(--forest); color: var(--forest); }
+    .mc-btn-sm.primary { background: var(--forest); color: white; border-color: var(--forest); }
+    .mc-btn-sm.primary:hover { background: var(--forest-mid); }
+    .mc-btn-sm.danger { border-color: #e74c3c; color: #e74c3c; }
+    .mc-btn-sm.danger:hover { background: #e74c3c; color: white; }
+
+    /* Domains list */
+    .mc-domain-row {
+      padding: 14px 0; border-bottom: 1px solid var(--line-soft);
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .mc-domain-row:last-child { border-bottom: none; }
+    .mc-domain-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+    }
+    .mc-domain-name { font-size: .95em; font-weight: 600; color: var(--warm-black); }
+    .mc-domain-addr { font-size: .8em; color: var(--muted); margin-top: 2px; }
+    .mc-domain-cuvees { font-size: .8em; color: var(--muted-2); margin-top: 4px; }
+    .mc-status-pill {
+      font-size: .72em; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+      margin-left: auto; flex-shrink: 0;
+    }
+    .mc-status-fait { background: oklch(93% 0.04 148); color: var(--forest); }
+    .mc-status-essayer { background: oklch(96% 0.04 75); color: var(--muted); }
+
+    /* Inventory */
+    .mc-inv-search {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--line);
+      border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .9em;
+      outline: none; transition: border-color .2s; background: var(--cream);
+      margin-bottom: 16px;
+    }
+    .mc-inv-search:focus { border-color: var(--forest); background: white; }
+    .mc-inv-section { margin-bottom: 20px; }
+    .mc-inv-type-header {
+      font-size: .78em; font-weight: 600; color: var(--muted); letter-spacing: .05em;
+      text-transform: uppercase; padding: 8px 0 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .mc-inv-row {
+      display: grid; grid-template-columns: 1fr auto auto auto;
+      gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line-soft);
+      align-items: center;
+    }
+    .mc-inv-name { font-size: .9em; font-weight: 600; }
+    .mc-inv-meta { font-size: .8em; color: var(--muted); }
+    .mc-inv-domain { font-size: .8em; color: var(--muted-2); text-align: right; }
+    .mc-inv-tag {
+      font-size: .72em; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+      white-space: nowrap;
+    }
+    .mc-tag-bue { background: oklch(93% 0.04 148); color: var(--forest); }
+    .mc-tag-coeur { background: oklch(96% 0.08 25); color: oklch(40% 0.14 25); }
+    .mc-tag-essayer { background: var(--tile); color: var(--muted); }
+
+    /* Coups de cœur */
+    .mc-coeur-domain { margin-bottom: 20px; }
+    .mc-coeur-domain-name {
+      font-family: 'Playfair Display', serif; font-size: .95em;
+      font-weight: 700; color: var(--warm-black); padding-bottom: 8px;
+      border-bottom: 1px solid var(--line-soft); margin-bottom: 8px;
+    }
+    .mc-coeur-wine {
+      display: flex; align-items: center; gap: 10px; padding: 8px 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .mc-coeur-wine:last-child { border-bottom: none; }
+    .mc-coeur-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .mc-coeur-name { font-size: .9em; font-weight: 600; flex: 1; }
+    .mc-coeur-meta { font-size: .8em; color: var(--muted); }
+
+    /* Sidebar cards */
+    .mc-sidebar-cta {
+      background: var(--orange); border-radius: 16px; padding: 22px;
+      color: white; text-align: center; cursor: pointer; border: none;
+      font-family: 'DM Sans', sans-serif; width: 100%; transition: opacity .2s;
+    }
+    .mc-sidebar-cta:hover { opacity: .9; }
+    .mc-sidebar-cta-title {
+      font-family: 'Playfair Display', serif; font-size: 1.1em; font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .mc-sidebar-cta-sub { font-size: .82em; opacity: .88; line-height: 1.4; }
+
+    .mc-stat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: .88em;
+    }
+    .mc-stat-row:last-child { border-bottom: none; }
+    .mc-stat-row-label { color: var(--muted); }
+    .mc-stat-row-val { font-weight: 600; color: var(--warm-black); }
+
+    /* Form modal */
+    .mc-modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .mc-modal {
+      background: var(--card); border-radius: 20px;
+      padding: 32px; max-width: 540px; width: 100%; position: relative;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0,0,0,.25);
+    }
+    .mc-modal-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px; border-radius: 50%; background: var(--tile);
+      border: none; font-size: 1.1em; cursor: pointer; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mc-modal-close:hover { background: var(--line); }
+    .mc-modal h3 {
+      font-family: 'Playfair Display', serif; font-size: 1.35em;
+      color: var(--forest); margin-bottom: 22px;
+    }
+    .mc-form-group { margin-bottom: 16px; }
+    .mc-form-label {
+      display: block; font-size: .82em; font-weight: 600; color: var(--muted);
+      margin-bottom: 6px; letter-spacing: .04em;
+    }
+    .mc-form-input, .mc-form-select, .mc-form-textarea {
+      width: 100%; padding: 11px 14px; border: 1.5px solid var(--line);
+      border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .92em;
+      outline: none; transition: border-color .2s; background: var(--cream);
+      color: var(--warm-black);
+    }
+    .mc-form-input:focus, .mc-form-select:focus, .mc-form-textarea:focus {
+      border-color: var(--forest); background: white;
+    }
+    .mc-form-textarea { min-height: 72px; resize: vertical; }
+    .mc-form-hint { font-size: .78em; color: var(--muted-2); margin-top: 5px; }
+    .mc-status-btns { display: flex; gap: 10px; }
+    .mc-status-btn {
+      flex: 1; padding: 10px 14px; border-radius: 10px; border: 2px solid var(--line);
+      background: white; font-family: 'DM Sans', sans-serif; font-size: .88em;
+      font-weight: 600; cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .mc-status-btn.selected-essayer { background: var(--orange); color: white; border-color: var(--orange); }
+    .mc-status-btn.selected-fait { background: var(--forest); color: white; border-color: var(--forest); }
+    .mc-cuvees-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+    .mc-cuvee-row {
+      background: var(--tile); border-radius: 12px; padding: 14px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .mc-cuvee-row .mc-form-input { background: white; }
+    .mc-cuvee-row-full { grid-column: 1 / -1; }
+    .mc-btn-add-cuvee {
+      width: 100%; padding: 10px; border-radius: 10px; border: 1.5px dashed var(--line);
+      background: transparent; font-family: 'DM Sans', sans-serif; font-size: .88em;
+      color: var(--muted); cursor: pointer; transition: all .15s; margin-top: 8px;
+    }
+    .mc-btn-add-cuvee:hover { border-color: var(--forest); color: var(--forest); }
+    .mc-btn-del-cuvee {
+      grid-column: 1 / -1; text-align: right; background: none; border: none;
+      font-size: .78em; color: #e74c3c; cursor: pointer;
+    }
+    .mc-form-submit {
+      width: 100%; padding: 13px; border-radius: 12px; background: var(--forest);
+      color: white; border: none; font-family: 'DM Sans', sans-serif;
+      font-size: 1em; font-weight: 600; cursor: pointer; margin-top: 8px;
+      transition: background .2s;
+    }
+    .mc-form-submit:hover { background: var(--forest-mid); }
+    .mc-form-submit:disabled { opacity: .5; cursor: not-allowed; }
+    .mc-geo-status { font-size: .82em; margin-top: 8px; padding: 8px 12px; border-radius: 8px; }
+    .mc-geo-loading { background: oklch(96% 0.04 148); color: var(--forest); }
+    .mc-geo-error { background: oklch(97% 0.04 25); color: #c0392b; }
+    .mc-geo-ok { background: oklch(93% 0.04 148); color: var(--forest); }
+
+    /* Empty states */
+    .mc-empty {
+      text-align: center; padding: 32px 16px; color: var(--muted);
+      font-size: .9em; line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .mc-main { grid-template-columns: 1fr; }
+      .mc-sidebar { display: none; }
+      .mc-hero-counters { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login gate -->
+<div id="login-gate">
+  <div class="gate-card">
+    <div class="gate-logo">Marguerite</div>
+    <div class="gate-sub">Route des Vins</div>
+    <h2 id="gate-title">Connexion</h2>
+    <p>Connectez-vous pour accéder à votre carnet de route.</p>
+    <div id="gate-firstname-wrap">
+      <input type="text" id="gate-firstname" class="gate-input" placeholder="Prénom" autocomplete="given-name" maxlength="30">
+    </div>
+    <input type="email" id="gate-email" class="gate-input" placeholder="Adresse e-mail" autocomplete="email" required>
+    <input type="password" id="gate-password" class="gate-input" placeholder="Mot de passe" autocomplete="current-password" required
+           onkeydown="if(event.key==='Enter')submitGate()">
+    <button id="gate-submit-btn" class="gate-btn" onclick="submitGate()">Se connecter</button>
+    <p id="gate-error" class="gate-error" style="display:none"></p>
+    <p class="gate-switch">
+      <span id="gate-toggle-text">Pas encore de compte ?</span>
+      <a onclick="toggleGateMode()"> S'inscrire</a>
+    </p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app-root" style="display:none">
+  <div id="react-root"></div>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyDUVQPr2JTGgYltGTZYHx93zQMHVWBpwu8',
+  authDomain:        'routedesvins-619cd.firebaseapp.com',
+  projectId:         'routedesvins-619cd',
+  storageBucket:     'routedesvins-619cd.firebasestorage.app',
+  messagingSenderId: '241974496911',
+  appId:             '1:241974496911:web:95c7c5c6127d3975fb6afa',
+};
+let auth, db, fbReady = false;
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+  fbReady = true;
+} catch(e) { console.warn(e); }
+
+window.__mcState = {
+  user: null, firstName: null,
+  markers: [], userMaps: {},
+  loaded: false,
+};
+
+if (fbReady) {
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      try {
+        const snap = await db.collection('user_profiles').doc(user.uid).get();
+        if (snap.exists) {
+          window.__mcState.firstName = snap.data().firstName || null;
+        } else {
+          const fb = user.email.split('@')[0];
+          await db.collection('user_profiles').doc(user.uid).set({
+            firstName: fb, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          window.__mcState.firstName = fb;
+        }
+      } catch(_) {}
+      try {
+        const ms = await db.collection('user_maps').doc(user.uid).collection('maps').get();
+        window.__mcState.userMaps = {};
+        ms.forEach(d => { window.__mcState.userMaps[d.id] = { id: d.id, ...d.data() }; });
+      } catch(_) {}
+      try {
+        const mk = await db.collection('user_maps').doc(user.uid).collection('markers').get();
+        window.__mcState.markers = [];
+        mk.forEach(d => { window.__mcState.markers.push({ id: d.id, ...d.data() }); });
+      } catch(_) {}
+      window.__mcState.user = user;
+      window.__mcState.loaded = true;
+      document.getElementById('login-gate').style.display = 'none';
+      document.getElementById('app-root').style.display = 'block';
+      if (window.__mcReactBoot) window.__mcReactBoot();
+    } else {
+      document.getElementById('login-gate').style.display = 'flex';
+      document.getElementById('app-root').style.display = 'none';
+    }
+  });
+}
+
+let _gateMode = 'login';
+function toggleGateMode() {
+  _gateMode = _gateMode === 'login' ? 'signup' : 'login';
+  const isL = _gateMode === 'login';
+  document.getElementById('gate-title').textContent      = isL ? 'Connexion' : 'Créer un compte';
+  document.getElementById('gate-submit-btn').textContent = isL ? 'Se connecter' : "S'inscrire";
+  document.getElementById('gate-toggle-text').textContent= isL ? 'Pas encore de compte ?' : 'Déjà un compte ?';
+  document.querySelector('.gate-switch a').textContent   = isL ? " S'inscrire" : ' Se connecter';
+  const fw = document.getElementById('gate-firstname-wrap');
+  isL ? fw.classList.remove('visible') : fw.classList.add('visible');
+  document.getElementById('gate-error').style.display = 'none';
+}
+async function submitGate() {
+  if (!fbReady) return;
+  const email = document.getElementById('gate-email').value.trim();
+  const pwd   = document.getElementById('gate-password').value;
+  const errEl = document.getElementById('gate-error');
+  const btn   = document.getElementById('gate-submit-btn');
+  if (!email || !pwd) { errEl.textContent='Remplissez tous les champs.'; errEl.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = '…'; errEl.style.display = 'none';
+  try {
+    if (_gateMode === 'login') {
+      await auth.signInWithEmailAndPassword(email, pwd);
+    } else {
+      const fn = (document.getElementById('gate-firstname')?.value || '').trim();
+      const c  = await auth.createUserWithEmailAndPassword(email, pwd);
+      if (fn) await db.collection('user_profiles').doc(c.user.uid).set({ firstName: fn, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+    }
+  } catch(err) {
+    const m = { 'auth/email-already-in-use':'Email déjà utilisé.','auth/user-not-found':'Aucun compte.','auth/wrong-password':'Mot de passe incorrect.','auth/invalid-email':'Email invalide.','auth/weak-password':'Mot de passe trop faible.','auth/invalid-credential':'Email ou mot de passe incorrect.','auth/too-many-requests':'Trop de tentatives.' };
+    errEl.textContent = m[err.code] || err.message; errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = _gateMode === 'login' ? 'Se connecter' : "S'inscrire";
+  }
+}
+
+async function geocodeAddress(address) {
+  try {
+    const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.features && data.features.length) {
+        const feat = data.features[0];
+        const [lng, lat] = feat.geometry.coordinates;
+        const context = feat.properties.context || '';
+        const rawDept = context.split(',')[0].trim();
+        const deptCode = rawDept ? rawDept.padStart(2, '0') : null;
+        return { lat, lng, deptCode };
+      }
+    }
+  } catch(_) {}
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=fr&addressdetails=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
+  if (!res.ok) throw new Error('Géocodage impossible');
+  const data = await res.json();
+  if (!data.length) throw new Error('Adresse introuvable');
+  const r = data[0];
+  const cp = r.address?.postcode || '';
+  const deptCode = cp ? cp.substring(0, 2) : null;
+  return { lat: parseFloat(r.lat), lng: parseFloat(r.lon), deptCode };
+}
+</script>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const VIN_TYPES = [
+  { key: 'rouge',      label: 'Rouge',        dot: 'oklch(45% 0.14 25)' },
+  { key: 'blanc',      label: 'Blanc',        dot: 'oklch(75% 0.10 95)' },
+  { key: 'bulles',     label: 'Effervescent', dot: 'oklch(65% 0.06 200)' },
+  { key: 'rose',       label: 'Rosé',         dot: 'oklch(72% 0.12 15)' },
+  { key: 'maceration', label: 'Macération',   dot: 'oklch(58% 0.11 70)' },
+  { key: 'spiritueux', label: 'Spiritueux',   dot: 'oklch(48% 0.11 280)' },
+];
+
+function _esc(s) { return String(s || '').replace(/[<>"'&]/g, c => ({'<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','&':'&amp;'}[c])); }
+
+// ── Close Button ─────────────────────────────────────────────
+function CloseBtn() {
+  return (
+    <a href="index.html#carte" style={{
+      position:'fixed', top:18, right:24, zIndex:200,
+      width:36, height:36, borderRadius:'50%',
+      background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)',
+      color:'#fefae0', fontSize:'1.2em', lineHeight:1,
+      display:'flex', alignItems:'center', justifyContent:'center',
+      textDecoration:'none', cursor:'pointer',
+      transition:'background 0.2s',
+    }}
+    onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.18)'}
+    onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.08)'}
+    >×</a>
+  );
+}
+
+// ── Tabs ──────────────────────────────────────────────────────
+const TABS = [
+  { id: 'cartes',    label: 'Mes Cartes' },
+  { id: 'domaines',  label: 'Domaines' },
+  { id: 'inventaire',label: 'Inventaire' },
+  { id: 'coeur',     label: '♥ Coups de Cœur' },
+];
+
+// ── Hero ──────────────────────────────────────────────────────
+function Hero({ tab, setTab, markers, userMaps, firstName }) {
+  const totalDomaines = markers.length;
+  const totalFait     = markers.filter(m => m.statut === 'fait').length;
+  const totalCuvees   = markers.reduce((s, m) => s + (Array.isArray(m.cuvees) ? m.cuvees.length : 0), 0);
+  return (
+    <div className="mc-hero">
+      <div className="mc-hero-top">
+        <div>
+          <h1 className="mc-hero-title">
+            Votre carnet<br/><em>de route.</em>
+          </h1>
+          <p className="mc-hero-sub">
+            {firstName ? `Bienvenue, ${firstName} —` : ''} {Object.keys(userMaps).length} carte{Object.keys(userMaps).length !== 1 ? 's' : ''} · {totalDomaines} domaine{totalDomaines !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="mc-hero-counters">
+          <div className="mc-hero-counter">
+            <div className="mc-hero-counter-num">{totalDomaines}</div>
+            <div className="mc-hero-counter-label">domaines</div>
+          </div>
+          <div className="mc-hero-counter">
+            <div className="mc-hero-counter-num">{totalFait}</div>
+            <div className="mc-hero-counter-label">visités</div>
+          </div>
+          <div className="mc-hero-counter">
+            <div className="mc-hero-counter-num">{totalCuvees}</div>
+            <div className="mc-hero-counter-label">cuvées</div>
+          </div>
+        </div>
+      </div>
+      <div className="mc-tabs">
+        {TABS.map(t => (
+          <button key={t.id} className={`mc-tab-btn${tab === t.id ? ' active' : ''}`} onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── TabCartes ─────────────────────────────────────────────────
+function TabCartes({ markers, userMaps, activeMapId, setActiveMapId, onAddDomain, reload }) {
+  const uid = window.__mcState.user?.uid;
+
+  async function createMap() {
+    const name = prompt('Nom de la nouvelle carte :');
+    if (!name || !name.trim() || !uid) return;
+    const ref = await db.collection('user_maps').doc(uid).collection('maps').add({
+      name: name.trim(), createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    reload();
+  }
+
+  async function renameMap(mapId, current) {
+    const name = prompt('Nouveau nom :', current);
+    if (!name || !name.trim() || name.trim() === current || !uid) return;
+    await db.collection('user_maps').doc(uid).collection('maps').doc(mapId).update({ name: name.trim() });
+    reload();
+  }
+
+  async function deleteMap(mapId) {
+    if (!confirm('Supprimer cette carte ? Les domaines associés resteront mais seront sans carte.')) return;
+    if (!uid) return;
+    await db.collection('user_maps').doc(uid).collection('maps').doc(mapId).delete();
+    reload();
+  }
+
+  async function deleteMarker(markerId) {
+    if (!confirm('Supprimer ce domaine définitivement ?')) return;
+    if (!uid) return;
+    await db.collection('user_maps').doc(uid).collection('markers').doc(markerId).delete();
+    reload();
+  }
+
+  const mapsArr = Object.values(userMaps);
+  const domainsInMap = markers.filter(m => m.mapId === activeMapId || (!m.mapId && activeMapId === 'default'));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Maps list */}
+      <div className="mc-card">
+        <div className="mc-card-header">
+          <span className="mc-card-title">Mes Cartes</span>
+          <button className="mc-btn-sm primary" onClick={createMap}>+ Nouvelle carte</button>
+        </div>
+        <div className="mc-card-body">
+          {!mapsArr.length && (
+            <div className="mc-empty">Aucune carte. Créez-en une pour organiser vos domaines.</div>
+          )}
+          {mapsArr.map(m => {
+            const count = markers.filter(mk => mk.mapId === m.id || (!mk.mapId && m.id === 'default')).length;
+            const isActive = m.id === activeMapId;
+            const goToMap = (id) => {
+              localStorage.setItem('mc_activeMapId', id);
+              localStorage.setItem('mc_pendingMapId', id);
+              window.location.href = 'index.html';
+            };
+            return (
+              <div key={m.id} className={`mc-map-row${isActive ? ' active-map' : ''}`}>
+                <div style={{ cursor: 'pointer' }} onClick={() => goToMap(m.id)}>
+                  <div className="mc-map-name">{m.name || 'Sans titre'}</div>
+                  <div className="mc-map-count">{count} domaine{count !== 1 ? 's' : ''}</div>
+                </div>
+                <div className="mc-map-actions">
+                  {isActive
+                    ? <span className="mc-badge-active" style={{ cursor: 'pointer' }} onClick={() => goToMap(m.id)} title="Voir sur la carte">Active ✓ →</span>
+                    : <button className="mc-btn-sm primary" onClick={() => goToMap(m.id)}>Activer →</button>
+                  }
+                  <button className="mc-btn-sm" onClick={() => renameMap(m.id, m.name || '')} title="Renommer">✏</button>
+                  <button className="mc-btn-sm danger" onClick={() => deleteMap(m.id)} title="Supprimer">✕</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Domains in active map */}
+      <div className="mc-card">
+        <div className="mc-card-header">
+          <span className="mc-card-title">
+            Domaines — {userMaps[activeMapId]?.name || 'Ma Carte'}
+          </span>
+          <button className="mc-btn-sm primary" onClick={onAddDomain}>+ Ajouter</button>
+        </div>
+        <div className="mc-card-body">
+          {!domainsInMap.length && (
+            <div className="mc-empty">Aucun domaine dans cette carte.<br/>Ajoutez votre premier domaine !</div>
+          )}
+          {domainsInMap.map(m => {
+            const cuvCount = Array.isArray(m.cuvees) ? m.cuvees.length : 0;
+            return (
+              <div key={m.id} className="mc-domain-row">
+                <div className="mc-domain-dot" style={{ background: m.statut === 'fait' ? 'var(--forest)' : 'var(--orange)' }} />
+                <div style={{ flex: 1 }}>
+                  <div className="mc-domain-name">{m.name || 'Sans nom'}</div>
+                  {m.address && <div className="mc-domain-addr">{m.address}</div>}
+                  {cuvCount > 0 && <div className="mc-domain-cuvees">{cuvCount} cuvée{cuvCount !== 1 ? 's' : ''}</div>}
+                </div>
+                <span className={`mc-status-pill ${m.statut === 'fait' ? 'mc-status-fait' : 'mc-status-essayer'}`}>
+                  {m.statut === 'fait' ? 'Visité ✓' : 'À essayer'}
+                </span>
+                <button className="mc-btn-sm danger" onClick={() => deleteMarker(m.id)} title="Supprimer" style={{ marginLeft: 8 }}>✕</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TabDomaines ───────────────────────────────────────────────
+function TabDomaines({ markers, userMaps }) {
+  const [filter, setFilter] = useState('all');
+  const filtered = filter === 'all' ? markers
+    : markers.filter(m => m.statut === filter);
+  const sorted = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  return (
+    <div className="mc-card">
+      <div className="mc-card-header">
+        <span className="mc-card-title">Tous les domaines</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[['all','Tous'],['fait','Visités'],['a_essayer','À essayer']].map(([v, label]) => (
+            <button key={v} className={`mc-btn-sm${filter === v ? ' primary' : ''}`} onClick={() => setFilter(v)}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="mc-card-body">
+        {!sorted.length && <div className="mc-empty">Aucun domaine trouvé.</div>}
+        {sorted.map(m => {
+          const cuvees = Array.isArray(m.cuvees) ? m.cuvees : [];
+          const mapName = userMaps[m.mapId]?.name || '';
+          return (
+            <div key={m.id} className="mc-domain-row">
+              <div className="mc-domain-dot" style={{ background: m.statut === 'fait' ? 'var(--forest)' : 'var(--orange)' }} />
+              <div style={{ flex: 1 }}>
+                <div className="mc-domain-name">{m.name || 'Sans nom'}</div>
+                {m.address && <div className="mc-domain-addr">{m.address}</div>}
+                {mapName && <div className="mc-domain-cuvees" style={{ color: 'var(--sage)' }}>📋 {mapName}</div>}
+                {cuvees.length > 0 && (
+                  <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {cuvees.slice(0, 3).map((c, i) => {
+                      const vt = VIN_TYPES.find(t => t.key === c.typeVin);
+                      return (
+                        <span key={i} style={{ fontSize: '.75em', padding: '2px 8px', borderRadius: 20, background: 'var(--tile)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {vt && <span style={{ width: 6, height: 6, borderRadius: '50%', background: vt.dot, display: 'inline-block' }}/>}
+                          {c.nom || 'Cuvée'}
+                        </span>
+                      );
+                    })}
+                    {cuvees.length > 3 && <span style={{ fontSize: '.75em', color: 'var(--muted)' }}>+{cuvees.length - 3}</span>}
+                  </div>
+                )}
+              </div>
+              <span className={`mc-status-pill ${m.statut === 'fait' ? 'mc-status-fait' : 'mc-status-essayer'}`}>
+                {m.statut === 'fait' ? 'Visité ✓' : 'À essayer'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── TabInventaire ─────────────────────────────────────────────
+function TabInventaire({ markers }) {
+  const [query, setQuery] = useState('');
+  const allCuvees = markers.flatMap(m =>
+    (Array.isArray(m.cuvees) ? m.cuvees : []).map(c => ({ ...c, _domaine: m.name || '' }))
+  );
+  const q = query.toLowerCase().trim();
+  const filtered = q
+    ? allCuvees.filter(c =>
+        (c.nom || '').toLowerCase().includes(q) ||
+        (c.appellation || '').toLowerCase().includes(q) ||
+        (c._domaine || '').toLowerCase().includes(q))
+    : allCuvees;
+
+  const byType = {};
+  VIN_TYPES.forEach(t => { byType[t.key] = []; });
+  byType[''] = [];
+  filtered.forEach(c => {
+    const k = VIN_TYPES.some(t => t.key === c.typeVin) ? c.typeVin : '';
+    byType[k].push(c);
+  });
+
+  return (
+    <div className="mc-card">
+      <div className="mc-card-header">
+        <span className="mc-card-title">Inventaire des cuvées</span>
+        <span style={{ fontSize: '.82em', color: 'var(--muted)' }}>{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div className="mc-card-body">
+        <input
+          className="mc-inv-search"
+          type="text" placeholder="Rechercher une cuvée, appellation, domaine…"
+          value={query} onChange={e => setQuery(e.target.value)}
+        />
+        {!filtered.length && <div className="mc-empty">Aucune cuvée trouvée.</div>}
+        {VIN_TYPES.filter(t => byType[t.key].length > 0).map(t => (
+          <div key={t.key} className="mc-inv-section">
+            <div className="mc-inv-type-header">
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.dot, display: 'inline-block' }}/>
+              {t.label}s · {byType[t.key].length}
+            </div>
+            {byType[t.key].map((c, i) => {
+              const meta = [c.appellation, c.millesime, c.prix ? c.prix + ' €' : ''].filter(Boolean).join(' · ');
+              const tagCls = c.statut === 'coup_de_coeur' ? 'mc-tag-coeur' : c.statut === 'deja_bue' ? 'mc-tag-bue' : 'mc-tag-essayer';
+              const tagLabel = c.statut === 'coup_de_coeur' ? 'Coup de Cœur ♥' : c.statut === 'deja_bue' ? 'Dégustée ✓' : 'À essayer';
+              return (
+                <div key={i} className="mc-inv-row">
+                  <div>
+                    <div className="mc-inv-name">{c.nom || 'Sans nom'}</div>
+                    {meta && <div className="mc-inv-meta">{meta}</div>}
+                  </div>
+                  <div className="mc-inv-domain">{c._domaine}</div>
+                  <span className={`mc-inv-tag ${tagCls}`}>{tagLabel}</span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        {byType[''].length > 0 && (
+          <div className="mc-inv-section">
+            <div className="mc-inv-type-header">Autres · {byType[''].length}</div>
+            {byType[''].map((c, i) => (
+              <div key={i} className="mc-inv-row">
+                <div>
+                  <div className="mc-inv-name">{c.nom || 'Sans nom'}</div>
+                </div>
+                <div className="mc-inv-domain">{c._domaine}</div>
+                <span className="mc-inv-tag mc-tag-essayer">À essayer</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── TabCoeur ──────────────────────────────────────────────────
+function TabCoeur({ markers }) {
+  const coeurCuvees = markers.flatMap(m =>
+    (Array.isArray(m.cuvees) ? m.cuvees : [])
+      .filter(c => c.statut === 'coup_de_coeur')
+      .map(c => ({ ...c, _domaine: m.name || '' }))
+  );
+
+  const byDomain = {};
+  coeurCuvees.forEach(c => {
+    if (!byDomain[c._domaine]) byDomain[c._domaine] = [];
+    byDomain[c._domaine].push(c);
+  });
+
+  if (!coeurCuvees.length) {
+    return (
+      <div className="mc-card">
+        <div className="mc-card-header"><span className="mc-card-title">♥ Coups de Cœur</span></div>
+        <div className="mc-card-body">
+          <div className="mc-empty">Aucun coup de cœur pour l'instant.<br/>Marquez vos cuvées préférées lors de l'ajout.</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mc-card">
+      <div className="mc-card-header">
+        <span className="mc-card-title">♥ Coups de Cœur</span>
+        <span style={{ fontSize: '.82em', color: 'var(--muted)' }}>{coeurCuvees.length} cuvée{coeurCuvees.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div className="mc-card-body">
+        {Object.entries(byDomain).sort(([a],[b]) => a.localeCompare(b)).map(([domaine, cuvees]) => (
+          <div key={domaine} className="mc-coeur-domain">
+            <div className="mc-coeur-domain-name">{domaine || 'Domaine inconnu'}</div>
+            {cuvees.map((c, i) => {
+              const vt = VIN_TYPES.find(t => t.key === c.typeVin);
+              const meta = [c.appellation, c.millesime, c.prix ? c.prix + ' €' : ''].filter(Boolean).join(' · ');
+              return (
+                <div key={i} className="mc-coeur-wine">
+                  <div className="mc-coeur-dot" style={{ background: vt?.dot || 'var(--orange)' }}/>
+                  <div className="mc-coeur-name">{c.nom || 'Sans nom'}</div>
+                  {meta && <div className="mc-coeur-meta">{meta}</div>}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Sidebar ───────────────────────────────────────────────────
+function Sidebar({ markers, userMaps, onAddDomain }) {
+  const totalFait    = markers.filter(m => m.statut === 'fait').length;
+  const totalCuvees  = markers.reduce((s, m) => s + (Array.isArray(m.cuvees) ? m.cuvees.length : 0), 0);
+  const totalCoeur   = markers.reduce((s, m) => s + (Array.isArray(m.cuvees) ? m.cuvees.filter(c => c.statut === 'coup_de_coeur').length : 0), 0);
+  const depts        = new Set(markers.filter(m => m.deptCode).map(m => m.deptCode));
+  const mapsCount    = Object.keys(userMaps).length;
+
+  return (
+    <>
+      <button className="mc-sidebar-cta" onClick={onAddDomain}>
+        <div className="mc-sidebar-cta-title">+ Ajouter un domaine</div>
+        <div className="mc-sidebar-cta-sub">Enregistrez un nouveau domaine viticole dans votre carnet.</div>
+      </button>
+
+      <div className="mc-card">
+        <div className="mc-card-header"><span className="mc-card-title">Mon bilan</span></div>
+        <div className="mc-card-body">
+          <div className="mc-stat-row"><span className="mc-stat-row-label">Cartes</span><span className="mc-stat-row-val">{mapsCount}</span></div>
+          <div className="mc-stat-row"><span className="mc-stat-row-label">Domaines visités</span><span className="mc-stat-row-val">{totalFait}</span></div>
+          <div className="mc-stat-row"><span className="mc-stat-row-label">À essayer</span><span className="mc-stat-row-val">{markers.length - totalFait}</span></div>
+          <div className="mc-stat-row"><span className="mc-stat-row-label">Cuvées</span><span className="mc-stat-row-val">{totalCuvees}</span></div>
+          <div className="mc-stat-row"><span className="mc-stat-row-label">Coups de Cœur</span><span className="mc-stat-row-val">{totalCoeur}</span></div>
+          <div className="mc-stat-row"><span className="mc-stat-row-label">Départements</span><span className="mc-stat-row-val">{depts.size}</span></div>
+        </div>
+      </div>
+
+      <div className="mc-card">
+        <div className="mc-card-header"><span className="mc-card-title">Navigation</span></div>
+        <div className="mc-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <a href="index.html" style={{ display: 'block', padding: '10px 12px', borderRadius: 10, background: 'var(--tile)', fontSize: '.88em', color: 'var(--warm-black)', textDecoration: 'none', fontWeight: 500 }}>🗺 La Carte interactive</a>
+          <a href="Mes%20Donn%C3%A9es.html" style={{ display: 'block', padding: '10px 12px', borderRadius: 10, background: 'var(--tile)', fontSize: '.88em', color: 'var(--warm-black)', textDecoration: 'none', fontWeight: 500 }}>📊 Mes Données</a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── AddDomainForm ─────────────────────────────────────────────
+function AddDomainForm({ onClose, userMaps, activeMapId, reload }) {
+  const [nom, setNom]         = useState('');
+  const [addr, setAddr]       = useState('');
+  const [statut, setStatut]   = useState('a_essayer');
+  const [mapId, setMapId]     = useState(activeMapId || 'default');
+  const [cuvees, setCuvees]   = useState([]);
+  const [geoStatus, setGeoStatus] = useState(null);
+  const [saving, setSaving]   = useState(false);
+
+  function addCuvee() {
+    setCuvees(prev => [...prev, { nom: '', typeVin: 'rouge', appellation: '', millesime: '', prix: '', cepage: '', statut: 'a_essayer' }]);
+  }
+  function removeCuvee(i) {
+    setCuvees(prev => prev.filter((_, j) => j !== i));
+  }
+  function updateCuvee(i, field, val) {
+    setCuvees(prev => prev.map((c, j) => j === i ? { ...c, [field]: val } : c));
+  }
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!nom.trim()) return;
+    if (!addr.trim()) { setGeoStatus({ type: 'error', msg: 'Veuillez renseigner une adresse.' }); return; }
+    const uid = window.__mcState.user?.uid;
+    if (!uid) return;
+    setSaving(true);
+    setGeoStatus({ type: 'loading', msg: 'Géolocalisation en cours…' });
+    let lat = null, lng = null, deptCode = null;
+    try {
+      const geo = await geocodeAddress(addr.trim());
+      lat = geo.lat; lng = geo.lng; deptCode = geo.deptCode;
+      setGeoStatus({ type: 'ok', msg: '✓ Adresse localisée.' });
+    } catch(err) {
+      const isFile = window.location.protocol === 'file:';
+      setGeoStatus({ type: 'error', msg: isFile ? 'Géocodage indisponible en mode fichier local. Ouvrez via un serveur HTTP.' : `Adresse introuvable. Vérifiez votre connexion.` });
+      setSaving(false); return;
+    }
+    try {
+      await db.collection('user_maps').doc(uid).collection('markers').add({
+        name: nom.trim(), address: addr.trim(), statut, mapId,
+        cuvees: cuvees.filter(c => c.nom.trim()),
+        lat, lng, deptCode,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      reload();
+      onClose();
+    } catch(err) {
+      setGeoStatus({ type: 'error', msg: "Erreur lors de l'enregistrement : " + err.message });
+    }
+    setSaving(false);
+  }
+
+  const mapsArr = Object.values(userMaps);
+
+  return (
+    <div className="mc-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="mc-modal">
+        <button className="mc-modal-close" onClick={onClose}>×</button>
+        <h3>Mon carnet de route</h3>
+        <form onSubmit={submit}>
+          {mapsArr.length > 0 && (
+            <div className="mc-form-group">
+              <label className="mc-form-label">Carte</label>
+              <select className="mc-form-select" value={mapId} onChange={e => setMapId(e.target.value)}>
+                {mapsArr.map(m => <option key={m.id} value={m.id}>{m.name || 'Sans titre'}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="mc-form-group">
+            <label className="mc-form-label">Nom du domaine *</label>
+            <input className="mc-form-input" type="text" placeholder="ex : Domaine de l'Oubliée"
+              value={nom} onChange={e => setNom(e.target.value)} required autoFocus/>
+          </div>
+          <div className="mc-form-group">
+            <label className="mc-form-label">Adresse *</label>
+            <input className="mc-form-input" type="text" placeholder="ex : 26 rue Dorothée de Dino, Saint Patrice"
+              value={addr} onChange={e => setAddr(e.target.value)} required/>
+            <p className="mc-form-hint">Utilisée pour placer automatiquement le point sur la carte.</p>
+          </div>
+          {geoStatus && (
+            <div className={`mc-geo-status mc-geo-${geoStatus.type}`}>{geoStatus.msg}</div>
+          )}
+          <div className="mc-form-group">
+            <label className="mc-form-label">Cuvées</label>
+            <div className="mc-cuvees-list">
+              {cuvees.map((c, i) => (
+                <div key={i} className="mc-cuvee-row">
+                  <input className="mc-form-input" type="text" placeholder="Nom de la cuvée"
+                    value={c.nom} onChange={e => updateCuvee(i, 'nom', e.target.value)}/>
+                  <select className="mc-form-select" value={c.typeVin} onChange={e => updateCuvee(i, 'typeVin', e.target.value)}>
+                    {VIN_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                  </select>
+                  <input className="mc-form-input" type="text" placeholder="Appellation"
+                    value={c.appellation} onChange={e => updateCuvee(i, 'appellation', e.target.value)}/>
+                  <input className="mc-form-input" type="text" placeholder="Millésime"
+                    value={c.millesime} onChange={e => updateCuvee(i, 'millesime', e.target.value)}/>
+                  <input className="mc-form-input mc-cuvee-row-full" type="text" placeholder="Cépage(s)"
+                    value={c.cepage} onChange={e => updateCuvee(i, 'cepage', e.target.value)}/>
+                  <select className="mc-form-select" value={c.statut} onChange={e => updateCuvee(i, 'statut', e.target.value)}>
+                    <option value="a_essayer">À essayer</option>
+                    <option value="deja_bue">Déjà dégustée</option>
+                    <option value="coup_de_coeur">Coup de Cœur ♥</option>
+                  </select>
+                  <button type="button" className="mc-btn-del-cuvee" onClick={() => removeCuvee(i)}>✕ Supprimer</button>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="mc-btn-add-cuvee" onClick={addCuvee}>+ Ajouter une cuvée</button>
+          </div>
+          <div className="mc-form-group">
+            <label className="mc-form-label">Statut</label>
+            <div className="mc-status-btns">
+              <button type="button" className={`mc-status-btn${statut === 'a_essayer' ? ' selected-essayer' : ''}`} onClick={() => setStatut('a_essayer')}>À essayer</button>
+              <button type="button" className={`mc-status-btn${statut === 'fait' ? ' selected-fait' : ''}`} onClick={() => setStatut('fait')}>Fait ✓</button>
+            </div>
+          </div>
+          <button type="submit" className="mc-form-submit" disabled={saving}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────
+function App() {
+  const s = window.__mcState;
+  const [tab, setTab]           = useState('cartes');
+  const [markers, setMarkers]   = useState(s.markers || []);
+  const [userMaps, setUserMaps] = useState(s.userMaps || {});
+  const [activeMapId, setActiveMapId] = useState(
+    localStorage.getItem('mc_activeMapId') || Object.keys(s.userMaps || {})[0] || 'default'
+  );
+  const [showForm, setShowForm] = useState(false);
+
+  async function reload() {
+    const uid = s.user?.uid;
+    if (!uid) return;
+    try {
+      const ms = await db.collection('user_maps').doc(uid).collection('maps').get();
+      const maps = {};
+      ms.forEach(d => { maps[d.id] = { id: d.id, ...d.data() }; });
+      setUserMaps(maps);
+      window.__mcState.userMaps = maps;
+      if (!maps[activeMapId] && Object.keys(maps).length) {
+        const first = Object.keys(maps)[0];
+        setActiveMapId(first);
+        localStorage.setItem('mc_activeMapId', first);
+      }
+    } catch(_) {}
+    try {
+      const mk = await db.collection('user_maps').doc(uid).collection('markers').get();
+      const ms2 = [];
+      mk.forEach(d => { ms2.push({ id: d.id, ...d.data() }); });
+      setMarkers(ms2);
+      window.__mcState.markers = ms2;
+    } catch(_) {}
+  }
+
+  return (
+    <>
+      <CloseBtn />
+      <Hero tab={tab} setTab={setTab} markers={markers} userMaps={userMaps} firstName={s.firstName} />
+      <div className="mc-main">
+        <div className="mc-content">
+          {tab === 'cartes'     && <TabCartes markers={markers} userMaps={userMaps} activeMapId={activeMapId} setActiveMapId={setActiveMapId} onAddDomain={() => setShowForm(true)} reload={reload}/>}
+          {tab === 'domaines'   && <TabDomaines markers={markers} userMaps={userMaps}/>}
+          {tab === 'inventaire' && <TabInventaire markers={markers}/>}
+          {tab === 'coeur'      && <TabCoeur markers={markers}/>}
+        </div>
+        <div className="mc-sidebar">
+          <Sidebar markers={markers} userMaps={userMaps} onAddDomain={() => setShowForm(true)}/>
+        </div>
+      </div>
+      {showForm && <AddDomainForm onClose={() => setShowForm(false)} userMaps={userMaps} activeMapId={activeMapId} reload={reload}/>}
+    </>
+  );
+}
+
+window.__mcReactBoot = () => {
+  const root = ReactDOM.createRoot(document.getElementById('react-root'));
+  root.render(<App/>);
+};
+if (window.__mcState?.loaded) window.__mcReactBoot();
+</script>
+</body>
+</html>

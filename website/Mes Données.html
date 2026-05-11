@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes Données · Marguerite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream:      oklch(94% 0.016 75);
+      --paper:      oklch(97% 0.012 75);
+      --card:       #ffffff;
+      --tile:       oklch(96% 0.012 75);
+      --forest:     oklch(30% 0.08 148);
+      --forest-mid: oklch(42% 0.09 145);
+      --sage:       oklch(57% 0.07 138);
+      --orange:     oklch(63% 0.17 42);
+      --warm-black: oklch(20% 0.02 60);
+      --ink:        oklch(28% 0.015 60);
+      --muted:      oklch(45% 0.01 75);
+      --muted-2:    oklch(55% 0.01 75);
+      --line:       rgba(0,0,0,0.07);
+      --line-soft:  rgba(0,0,0,0.04);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--warm-black);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; mix-blend-mode: multiply; opacity: 0.6;
+    }
+    h1,h2,h3,h4 { font-family: 'Playfair Display', serif; color: var(--warm-black); }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Login gate */
+    #login-gate {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 32px;
+    }
+    .gate-card {
+      background: var(--card); border-radius: 20px; padding: 48px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.12); max-width: 420px; width: 100%; text-align: center;
+    }
+    .gate-logo { font-family: 'Playfair Display', serif; font-size: 1.4em; font-style: italic; color: var(--forest); margin-bottom: 4px; }
+    .gate-sub { font-size: .85em; color: #888; margin-bottom: 28px; }
+    .gate-card h2 { font-family: 'Playfair Display', serif; font-size: 1.4em; color: var(--forest); margin-bottom: 8px; }
+    .gate-card p { font-size: .88em; color: #666; margin-bottom: 20px; }
+    .gate-input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid oklch(90% 0.012 75);
+      border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .92em; margin-bottom: 10px;
+      outline: none; transition: border-color .2s; background: var(--cream);
+    }
+    .gate-input:focus { border-color: var(--forest); background: white; }
+    .gate-btn {
+      width: 100%; padding: 12px; background: var(--forest); color: white; border: none;
+      border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .95em; font-weight: 600;
+      cursor: pointer; margin-top: 6px; transition: background .2s;
+    }
+    .gate-btn:hover { background: var(--forest-mid); }
+    .gate-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .gate-error { color: #c0392b; font-size: .85em; margin-top: 10px; text-align: left; }
+    .gate-switch { margin-top: 20px; font-size: .85em; color: #888; }
+    .gate-switch a { color: var(--forest); font-weight: 600; cursor: pointer; text-decoration: none; }
+    #gate-firstname-wrap { display: none; }
+    #gate-firstname-wrap.visible { display: block; }
+
+    @media (max-width: 768px) {
+      .main-grid { grid-template-columns: 1fr !important; }
+      .hero-stats { display: none !important; }
+      .stat-grid { grid-template-columns: 1fr 1fr !important; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login gate (shown when logged out) -->
+<div id="login-gate">
+  <div class="gate-card">
+    <div class="gate-logo">Marguerite</div>
+    <div class="gate-sub">Route des Vins</div>
+    <h2 id="gate-title">Connexion</h2>
+    <p>Connectez-vous pour accéder à vos données.</p>
+    <div id="gate-firstname-wrap">
+      <input type="text" id="gate-firstname" class="gate-input" placeholder="Prénom" autocomplete="given-name" maxlength="30">
+    </div>
+    <input type="email" id="gate-email" class="gate-input" placeholder="Adresse e-mail" autocomplete="email" required>
+    <input type="password" id="gate-password" class="gate-input" placeholder="Mot de passe" autocomplete="current-password" required
+           onkeydown="if(event.key==='Enter')submitGate()">
+    <button id="gate-submit-btn" class="gate-btn" onclick="submitGate()">Se connecter</button>
+    <p id="gate-error" class="gate-error" style="display:none"></p>
+    <p class="gate-switch">
+      <span id="gate-toggle-text">Pas encore de compte ?</span>
+      <a onclick="toggleGateMode()"> S'inscrire</a>
+    </p>
+  </div>
+</div>
+
+<!-- Dashboard (shown when logged in) -->
+<div id="app-root" style="display:none">
+  <div id="react-root"></div>
+</div>
+
+<script>
+// ── Firebase init ────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyDUVQPr2JTGgYltGTZYHx93zQMHVWBpwu8',
+  authDomain:        'routedesvins-619cd.firebaseapp.com',
+  projectId:         'routedesvins-619cd',
+  storageBucket:     'routedesvins-619cd.firebasestorage.app',
+  messagingSenderId: '241974496911',
+  appId:             '1:241974496911:web:95c7c5c6127d3975fb6afa',
+};
+let auth, db, fbReady = false;
+try {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+  fbReady = true;
+} catch(e) { console.warn(e); }
+
+// ── Global state (read by React app) ────────────────────────
+window.__mdState = {
+  user: null, firstName: null,
+  markers: [], userMaps: {}, favorites: {},
+  loaded: false,
+};
+
+// ── Auth state ──────────────────────────────────────────────
+if (fbReady) {
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      // Profile
+      try {
+        const snap = await db.collection('user_profiles').doc(user.uid).get();
+        if (snap.exists) {
+          window.__mdState.firstName = snap.data().firstName || null;
+        } else {
+          const fb = user.email.split('@')[0];
+          await db.collection('user_profiles').doc(user.uid).set({
+            firstName: fb, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          window.__mdState.firstName = fb;
+        }
+      } catch(_) {}
+      // Favorites
+      try {
+        const fs = await db.collection('users').doc(user.uid).collection('favorites').get();
+        window.__mdState.favorites = {};
+        fs.forEach(d => { window.__mdState.favorites[d.id] = d.data(); });
+      } catch(_) {}
+      // Maps
+      try {
+        const ms = await db.collection('user_maps').doc(user.uid).collection('maps').get();
+        window.__mdState.userMaps = {};
+        ms.forEach(d => { window.__mdState.userMaps[d.id] = { id: d.id, ...d.data() }; });
+      } catch(_) {}
+      // Markers
+      try {
+        const mk = await db.collection('user_maps').doc(user.uid).collection('markers').get();
+        window.__mdState.markers = [];
+        mk.forEach(d => { window.__mdState.markers.push({ id: d.id, ...d.data() }); });
+      } catch(_) {}
+
+      window.__mdState.user = user;
+      window.__mdState.loaded = true;
+      document.getElementById('login-gate').style.display = 'none';
+      document.getElementById('app-root').style.display = 'block';
+      if (window.__mdReactBoot) window.__mdReactBoot();
+    } else {
+      document.getElementById('login-gate').style.display = 'flex';
+      document.getElementById('app-root').style.display = 'none';
+    }
+  });
+}
+
+// ── Login gate JS ────────────────────────────────────────────
+let _gateMode = 'login';
+function toggleGateMode() {
+  _gateMode = _gateMode === 'login' ? 'signup' : 'login';
+  const isL = _gateMode === 'login';
+  document.getElementById('gate-title').textContent      = isL ? 'Connexion' : 'Créer un compte';
+  document.getElementById('gate-submit-btn').textContent = isL ? 'Se connecter' : "S'inscrire";
+  document.getElementById('gate-toggle-text').textContent= isL ? 'Pas encore de compte ?' : 'Déjà un compte ?';
+  document.querySelector('.gate-switch a').textContent   = isL ? " S'inscrire" : ' Se connecter';
+  const fw = document.getElementById('gate-firstname-wrap');
+  isL ? fw.classList.remove('visible') : fw.classList.add('visible');
+  document.getElementById('gate-error').style.display = 'none';
+}
+async function submitGate() {
+  if (!fbReady) return;
+  const email = document.getElementById('gate-email').value.trim();
+  const pwd   = document.getElementById('gate-password').value;
+  const errEl = document.getElementById('gate-error');
+  const btn   = document.getElementById('gate-submit-btn');
+  if (!email || !pwd) { errEl.textContent='Remplissez tous les champs.'; errEl.style.display='block'; return; }
+  btn.disabled = true; btn.textContent = '…'; errEl.style.display = 'none';
+  try {
+    if (_gateMode === 'login') {
+      await auth.signInWithEmailAndPassword(email, pwd);
+    } else {
+      const fn = (document.getElementById('gate-firstname')?.value || '').trim();
+      const c  = await auth.createUserWithEmailAndPassword(email, pwd);
+      if (fn) await db.collection('user_profiles').doc(c.user.uid).set({ firstName: fn, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+    }
+  } catch(err) {
+    const m = { 'auth/email-already-in-use':'Email déjà utilisé.','auth/user-not-found':'Aucun compte.','auth/wrong-password':'Mot de passe incorrect.','auth/invalid-email':'Email invalide.','auth/weak-password':'Mot de passe trop faible.','auth/invalid-credential':'Email ou mot de passe incorrect.','auth/too-many-requests':'Trop de tentatives.' };
+    errEl.textContent = m[err.code] || err.message; errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = _gateMode === 'login' ? 'Se connecter' : "S'inscrire";
+  }
+}
+</script>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+// ── Data helpers ─────────────────────────────────────────────
+const VIN_TYPES = [
+  { key: 'rouge',      label: 'Rouge',      dot: 'oklch(45% 0.14 25)' },
+  { key: 'blanc',      label: 'Blanc',      dot: 'oklch(75% 0.10 95)' },
+  { key: 'bulles',     label: 'Effervescent',dot:'oklch(65% 0.06 200)' },
+  { key: 'rose',       label: 'Rosé',       dot: 'oklch(72% 0.12 15)' },
+  { key: 'maceration', label: 'Macération', dot: 'oklch(58% 0.11 70)' },
+  { key: 'spiritueux', label: 'Spiritueux', dot: 'oklch(48% 0.11 280)' },
+];
+
+function computeStats(markers) {
+  const allCuvees = markers.flatMap(m =>
+    (Array.isArray(m.cuvees) ? m.cuvees : []).map(c => ({ ...c, _domaine: m.name || '', _mapId: m.mapId }))
+  );
+  const fait     = markers.filter(m => m.statut === 'fait');
+  const depts    = new Set(markers.filter(m => m.deptCode).map(m => m.deptCode));
+  const mapsSet  = new Set(markers.map(m => m.mapId).filter(Boolean));
+
+  // Couleurs
+  const byType = {};
+  VIN_TYPES.forEach(t => { byType[t.key] = 0; });
+  byType[''] = 0;
+  allCuvees.forEach(c => { byType[c.typeVin || ''] = (byType[c.typeVin || ''] || 0) + 1; });
+  const couleurs = VIN_TYPES.map(t => ({ nom: t.label, n: byType[t.key], pct: allCuvees.length ? Math.round(byType[t.key]/allCuvees.length*100) : 0, couleur: t.dot })).filter(c => c.n > 0);
+
+  // Cépages
+  const byCepage = {};
+  allCuvees.forEach(c => {
+    if (!c.cepage) return;
+    c.cepage.split(/[,;/]/).map(s => s.trim()).filter(Boolean).forEach(cep => {
+      byCepage[cep] = (byCepage[cep] || 0) + 1;
+    });
+  });
+  const cepages = Object.entries(byCepage).sort(([,a],[,b]) => b-a).slice(0,8)
+    .map(([nom, n], i) => ({ nom, n, couleur: ['oklch(45% 0.12 350)','oklch(70% 0.10 90)','oklch(55% 0.09 138)','oklch(56% 0.12 35)','oklch(63% 0.17 42)','oklch(65% 0.13 100)','oklch(50% 0.13 25)','oklch(48% 0.11 280)'][i] || 'var(--orange)' }));
+
+  // Timeline (12 derniers mois)
+  const now   = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, mois: d.toLocaleDateString('fr-FR',{month:'short',year: i>0&&i!==11?undefined:'2-digit'}).replace('.','' ), n: 0 });
+  }
+  markers.forEach(m => {
+    const ts = m.createdAt?.seconds ? m.createdAt.seconds*1000 : null;
+    if (!ts) return;
+    const d = new Date(ts);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const slot = months.find(mo => mo.key === key);
+    if (slot) slot.n++;
+  });
+
+  // Top cuvées
+  const topCuvees = allCuvees.filter(c => c.statut === 'coup_de_coeur').slice(0, 5);
+
+  // Prix total
+  const prixTotal = allCuvees.reduce((s, c) => s + (parseFloat(c.prix) || 0), 0);
+
+  // Taste profile (derived from typeVin distribution)
+  const total = allCuvees.length || 1;
+  const tasteProfile = [
+    { axe: 'Rouge',       v: Math.round((byType['rouge']||0)/total*100) },
+    { axe: 'Blanc',       v: Math.round((byType['blanc']||0)/total*100) },
+    { axe: 'Bulles',      v: Math.round((byType['bulles']||0)/total*100) },
+    { axe: 'Macération',  v: Math.round((byType['maceration']||0)/total*100) },
+    { axe: 'Coup de cœur',v: Math.round(allCuvees.filter(c=>c.statut==='coup_de_coeur').length/total*100) },
+    { axe: 'Diversité',   v: Math.min(100, Math.round(depts.size/10*100)) },
+  ];
+
+  // Visites (chronological)
+  const visites = [...fait].sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,10);
+
+  return { allCuvees, fait, depts, couleurs, cepages, months, topCuvees, prixTotal, tasteProfile, visites, mapsSet };
+}
+
+// ── Close Button ─────────────────────────────────────────────
+function CloseBtn() {
+  return (
+    <a href="index.html#carte" style={{
+      position:'fixed', top:18, right:24, zIndex:200,
+      width:36, height:36, borderRadius:'50%',
+      background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)',
+      color:'#fefae0', fontSize:'1.2em', lineHeight:1,
+      display:'flex', alignItems:'center', justifyContent:'center',
+      textDecoration:'none', cursor:'pointer',
+      transition:'background 0.2s',
+    }}
+    onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.18)'}
+    onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.08)'}
+    >×</a>
+  );
+}
+
+// ── Hero ─────────────────────────────────────────────────────
+function Hero({ tab, setTab, stats, markers }) {
+  const TABS = [
+    { id:'ensemble',   label:"Vue d'ensemble" },
+    { id:'gouts',      label:'Mes goûts' },
+    { id:'palmares',   label:'★ Palmarès' },
+    { id:'historique', label:'Historique' },
+  ];
+  return (
+    <div style={{ background:'var(--forest)', borderBottom:'1px solid var(--line)', position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:-60, right:-60, width:320, height:160, background:'oklch(63% 0.17 42 / 0.18)', borderRadius:'160px 160px 0 0', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', bottom:0, left:'38%', width:240, height:120, background:'oklch(63% 0.17 42 / 0.08)', borderRadius:'120px 120px 0 0', pointerEvents:'none' }} />
+      <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', opacity:0.06, pointerEvents:'none' }}>
+        <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5"/></pattern></defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+      <div style={{ maxWidth:1200, margin:'0 auto', padding:'48px 40px 0', position:'relative' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:40, alignItems:'flex-end', marginBottom:40 }}>
+          <div>
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+              <div style={{ width:24, height:1, background:'var(--orange)' }} />
+              <span style={{ fontFamily:'DM Sans', fontSize:11, fontWeight:600, letterSpacing:'0.14em', textTransform:'uppercase', color:'var(--orange)' }}>Mes Données</span>
+            </div>
+            <h1 style={{ fontFamily:'Playfair Display', fontSize:64, fontWeight:900, letterSpacing:'-0.03em', lineHeight:0.9, color:'var(--cream)' }}>
+              Votre route,<br /><em style={{ color:'var(--orange)' }}>en chiffres.</em>
+            </h1>
+            <p style={{ fontFamily:'DM Sans', fontSize:14, color:'oklch(80% 0.02 75)', marginTop:18, maxWidth:460, lineHeight:1.6 }}>
+              Tout ce que vous avez goûté, visité et noté sur Marguerite.
+            </p>
+          </div>
+          <div className="hero-stats" style={{ display:'flex', gap:32 }}>
+            {[[markers.length,'Domaines'],[stats.allCuvees.length,'Cuvées'],[stats.depts.size,'Dép.']].map(([n,l]) => (
+              <div key={l} style={{ textAlign:'right' }}>
+                <div style={{ fontFamily:'Playfair Display', fontSize:40, fontWeight:900, color:'var(--cream)', lineHeight:1 }}>{n}</div>
+                <div style={{ fontFamily:'DM Sans', fontSize:11, color:'oklch(70% 0.01 75)', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:4 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:2, overflowX:'auto' }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              fontFamily:'DM Sans', fontSize:13, fontWeight:500,
+              padding:'10px 24px', background:'transparent', border:'none', cursor:'pointer',
+              color: tab===t.id ? 'var(--cream)' : 'oklch(70% 0.02 75)',
+              borderBottom: tab===t.id ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+              transition:'all 0.2s', marginBottom:-1, whiteSpace:'nowrap',
+            }}>{t.label}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Card ─────────────────────────────────────────────────────
+function Card({ title, kicker, children, action, padding=24, span=1, style={} }) {
+  return (
+    <div style={{ background:'var(--card)', borderRadius:18, border:'1px solid var(--line)', padding, gridColumn:`span ${span}`, display:'flex', flexDirection:'column', boxShadow:'0 1px 2px rgba(0,0,0,0.03)', ...style }}>
+      {(title||kicker) && (
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18 }}>
+          <div>
+            {kicker && <div style={{ fontFamily:'DM Sans', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'var(--muted)', marginBottom:6 }}>{kicker}</div>}
+            {title && <h3 style={{ fontFamily:'Playfair Display', fontSize:20, fontWeight:700, color:'var(--warm-black)' }}>{title}</h3>}
+          </div>
+          {action}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+// ── StatTile ─────────────────────────────────────────────────
+function StatTile({ value, label, sub, accent=false, icon }) {
+  return (
+    <div style={{ background: accent ? 'oklch(63% 0.17 42 / 0.1)' : 'var(--card)', border:`1px solid ${accent ? 'oklch(63% 0.17 42 / 0.3)' : 'var(--line)'}`, borderRadius:18, padding:'22px 22px 20px', position:'relative', overflow:'hidden', boxShadow:'0 1px 2px rgba(0,0,0,0.03)' }}>
+      {icon && <div style={{ position:'absolute', top:14, right:16, opacity:0.3, fontSize:22 }}>{icon}</div>}
+      <div style={{ fontFamily:'DM Sans', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color: accent ? 'var(--orange)' : 'var(--muted)' }}>{label}</div>
+      <div style={{ fontFamily:'Playfair Display', fontSize:44, fontWeight:900, color: accent ? 'var(--orange)' : 'var(--warm-black)', lineHeight:1, marginTop:8 }}>{value}</div>
+      {sub && <div style={{ fontFamily:'DM Sans', fontSize:11, color:'var(--muted-2)', marginTop:8 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ── BarList ──────────────────────────────────────────────────
+function BarList({ data, max, valueKey='n', showPct=false }) {
+  const m = max || Math.max(...data.map(d => d[valueKey]), 1);
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      {data.map(d => (
+        <div key={d.nom}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 }}>
+            <span style={{ fontFamily:'DM Sans', fontSize:13, fontWeight:500, color:'var(--warm-black)' }}>{d.nom}</span>
+            <span className="mono" style={{ fontSize:12, color:'var(--muted)' }}>
+              {d[valueKey]}{showPct && d.pct!=null ? <span style={{ color:'var(--muted)', opacity:0.6 }}> · {d.pct}%</span> : ''}
+            </span>
+          </div>
+          <div style={{ height:6, background:'rgba(0,0,0,0.06)', borderRadius:100, overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${(d[valueKey]/m)*100}%`, background:d.couleur||'var(--orange)', borderRadius:100, transition:'width 0.5s' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── TimelineChart ────────────────────────────────────────────
+function TimelineChart({ data }) {
+  const W=720, H=200, padX=8, padY=24;
+  const innerW=W-padX*2, innerH=H-padY*2;
+  const max=Math.max(...data.map(d=>d.n), 1);
+  const bw=innerW/data.length;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width:'100%', height:'auto' }}>
+      {[0,0.25,0.5,0.75,1].map(t => (
+        <line key={t} x1={padX} x2={W-padX} y1={padY+innerH*(1-t)} y2={padY+innerH*(1-t)} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+      ))}
+      {data.map((d,i) => {
+        const h=(d.n/max)*innerH;
+        const x=padX+i*bw+bw*0.18, y=padY+innerH-h, w=bw*0.64;
+        const recent=i>=data.length-3;
+        return (
+          <g key={d.mois}>
+            <rect x={x} y={y} width={w} height={h} rx="3" fill={recent ? 'var(--orange)' : 'oklch(55% 0.09 138)'} opacity={recent ? 1 : 0.85} />
+            {d.n>0 && <text x={x+w/2} y={y-6} textAnchor="middle" fill="var(--ink)" fontSize="11" fontFamily="JetBrains Mono">{d.n}</text>}
+            <text x={x+w/2} y={H-4} textAnchor="middle" fill="var(--muted)" fontSize="10" fontFamily="DM Sans">{d.mois}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ── Donut ────────────────────────────────────────────────────
+function Donut({ data, size=200, total }) {
+  const r=size/2-8, cx=size/2, cy=size/2;
+  const sum=total||data.reduce((s,d)=>s+d.n,0)||1;
+  let cum=0;
+  const stroke=28;
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} style={{ width:size, height:size, flexShrink:0 }}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth={stroke} />
+      {data.map(d => {
+        const pct=d.n/sum, dash=2*Math.PI*r, offset=-cum*dash;
+        cum+=pct;
+        return <circle key={d.nom} cx={cx} cy={cy} r={r} fill="none" stroke={d.couleur} strokeWidth={stroke} strokeDasharray={`${pct*dash} ${dash}`} strokeDashoffset={offset} transform={`rotate(-90 ${cx} ${cy})`} />;
+      })}
+      <text x={cx} y={cy-4} textAnchor="middle" fontSize="32" fontFamily="Playfair Display" fontWeight="900" fill="var(--warm-black)">{sum}</text>
+      <text x={cx} y={cy+16} textAnchor="middle" fontSize="10" fontFamily="DM Sans" fill="var(--muted)" letterSpacing="1.5">CUVÉES</text>
+    </svg>
+  );
+}
+
+// ── TAB · Vue d'ensemble ─────────────────────────────────────
+function TabEnsemble({ markers, stats }) {
+  const fait    = stats.fait.length;
+  const aEss    = markers.length - fait;
+  const prixStr = stats.prixTotal > 0 ? `${Math.round(stats.prixTotal)} €` : '—';
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      <div className="stat-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
+        <StatTile value={markers.length} label="Domaines" sub={`${fait} visités · ${aEss} à essayer`} accent icon="🍇" />
+        <StatTile value={stats.allCuvees.length} label="Cuvées notées" sub={`${stats.allCuvees.filter(c=>c.statut==='coup_de_coeur').length} coups de cœur`} icon="🥂" />
+        <StatTile value={stats.depts.size} label="Départements" sub={`${Math.round(stats.depts.size/101*100)}% de la France`} icon="🗺" />
+        <StatTile value={prixStr} label="Total cuvées (prix)" sub="Somme des prix enregistrés" icon="€" />
+      </div>
+
+      <Card title="Activité" kicker="Ajouts par mois" action={
+        <div style={{ display:'flex', gap:16, fontFamily:'DM Sans', fontSize:11, color:'var(--muted)' }}>
+          <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:10, height:10, background:'oklch(55% 0.09 138)', borderRadius:2 }} /> Historique</span>
+          <span style={{ display:'flex', alignItems:'center', gap:6 }}><span style={{ width:10, height:10, background:'var(--orange)', borderRadius:2 }} /> Récent</span>
+        </div>
+      }>
+        <TimelineChart data={stats.months} />
+      </Card>
+
+      {stats.couleurs.length > 0 ? (
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+          <Card title="Par type de vin" kicker="Répartition cuvées">
+            <div style={{ display:'flex', alignItems:'center', gap:24 }}>
+              <Donut data={stats.couleurs} />
+              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:11 }}>
+                {stats.couleurs.map(c => (
+                  <div key={c.nom} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <span style={{ width:12, height:12, background:c.couleur, borderRadius:3, flexShrink:0 }} />
+                    <span style={{ flex:1, fontFamily:'DM Sans', fontSize:12, color:'var(--warm-black)' }}>{c.nom}</span>
+                    <span className="mono" style={{ fontSize:11, color:'var(--muted)' }}>{c.n} · {c.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+          {stats.cepages.length > 0 && (
+            <Card title="Cépages" kicker="Top cépages enregistrés">
+              <BarList data={stats.cepages.slice(0,6)} />
+            </Card>
+          )}
+        </div>
+      ) : (
+        <Card title="Par type de vin" kicker="Répartition cuvées">
+          <p style={{ fontFamily:'DM Sans', fontSize:13, color:'var(--muted)', fontStyle:'italic', padding:'20px 0' }}>Ajoutez des cuvées avec leur type de vin pour voir apparaître les statistiques.</p>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ── TAB · Mes goûts ──────────────────────────────────────────
+function TabGouts({ stats }) {
+  const profil = stats.tasteProfile;
+  const size=280, cx=size/2, cy=size/2, r=size/2-30;
+  const pts = profil.map((p,i) => {
+    const a=(Math.PI*2*i)/profil.length-Math.PI/2;
+    const rad=(p.v/100)*r;
+    return [cx+Math.cos(a)*rad, cy+Math.sin(a)*rad];
+  });
+  const polyPts = pts.map(p=>p.join(',')).join(' ');
+
+  const signatures = [];
+  if (stats.couleurs.length) {
+    const top = stats.couleurs[0];
+    signatures.push({ titre: top.nom, v:`${top.pct}%`, t:`Type de vin le plus fréquent dans vos cuvées.` });
+  }
+  if (stats.cepages.length) {
+    signatures.push({ titre:stats.cepages[0].nom, v:`×${stats.cepages[0].n}`, t:'Cépage le plus présent dans vos enregistrements.' });
+  }
+  if (stats.depts.size) {
+    signatures.push({ titre:'Couverture', v:`${stats.depts.size} dép.`, t:`${Math.round(stats.depts.size/101*100)}% des départements français explorés.` });
+  }
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+        <Card title="Profil de vos cuvées" kicker="Répartition par type">
+          <div style={{ display:'flex', justifyContent:'center', alignItems:'center' }}>
+            <svg viewBox={`0 0 ${size} ${size}`} style={{ width:'100%', maxWidth:size, height:'auto' }}>
+              {[0.25,0.5,0.75,1].map(t => {
+                const rPts=profil.map((_,i)=>{ const a=(Math.PI*2*i)/profil.length-Math.PI/2; return [cx+Math.cos(a)*r*t,cy+Math.sin(a)*r*t].join(','); }).join(' ');
+                return <polygon key={t} points={rPts} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />;
+              })}
+              {profil.map((_,i)=>{ const a=(Math.PI*2*i)/profil.length-Math.PI/2; return <line key={i} x1={cx} y1={cy} x2={cx+Math.cos(a)*r} y2={cy+Math.sin(a)*r} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />; })}
+              <polygon points={polyPts} fill="oklch(63% 0.17 42 / 0.22)" stroke="var(--orange)" strokeWidth="2" />
+              {pts.map((p,i)=><circle key={i} cx={p[0]} cy={p[1]} r="3.5" fill="var(--orange)" />)}
+              {profil.map((p,i)=>{
+                const a=(Math.PI*2*i)/profil.length-Math.PI/2;
+                const lx=cx+Math.cos(a)*(r+18), ly=cy+Math.sin(a)*(r+18);
+                return <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontFamily="DM Sans" fontWeight="600" fill="var(--warm-black)">{p.axe}</text>;
+              })}
+            </svg>
+          </div>
+        </Card>
+
+        <Card title="Cépages préférés" kicker="Fréquence dans vos enregistrements">
+          {stats.cepages.length ? <BarList data={stats.cepages} /> : <p style={{ fontFamily:'DM Sans', fontSize:13, color:'var(--muted)', fontStyle:'italic', padding:'20px 0' }}>Renseignez les cépages de vos cuvées pour les voir ici.</p>}
+        </Card>
+      </div>
+
+      {signatures.length > 0 && (
+        <Card title="Vos signatures" kicker="Ce qui vous caractérise">
+          <div style={{ display:'grid', gridTemplateColumns:`repeat(${signatures.length},1fr)`, gap:14 }}>
+            {signatures.map(s => (
+              <div key={s.titre} style={{ padding:'20px 22px', background:'var(--tile)', borderRadius:14, border:'1px solid var(--line-soft)' }}>
+                <div style={{ fontFamily:'DM Sans', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'var(--orange)' }}>{s.titre}</div>
+                <div style={{ fontFamily:'Playfair Display', fontSize:32, fontWeight:900, color:'var(--warm-black)', marginTop:6, lineHeight:1 }}>{s.v}</div>
+                <div style={{ fontFamily:'DM Sans', fontSize:12, color:'var(--muted)', marginTop:10, lineHeight:1.5 }}>{s.t}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ── TAB · Palmarès ───────────────────────────────────────────
+function TabPalmares({ stats, markers }) {
+  const coeurs = stats.topCuvees;
+  const etapes = [
+    { titre:'Premier domaine', atteint: markers.length >= 1, progress: Math.min(markers.length/1,1), detail: markers.length >= 1 ? (markers[markers.length-1]?.name || '—') : 'Ajoutez votre premier domaine' },
+    { titre:'10 domaines explorés', atteint: markers.length >= 10, progress: markers.length/10, detail: markers.length >= 10 ? '✓ Atteint !' : `${markers.length}/10` },
+    { titre:'25 domaines', atteint: markers.length >= 25, progress: markers.length/25, detail: markers.length >= 25 ? '✓ Atteint !' : `Plus que ${25-markers.length}` },
+    { titre:'50 cuvées notées', atteint: stats.allCuvees.length >= 50, progress: stats.allCuvees.length/50, detail: stats.allCuvees.length >= 50 ? '✓ Atteint !' : `${stats.allCuvees.length}/50` },
+    { titre:'10 départements', atteint: stats.depts.size >= 10, progress: stats.depts.size/10, detail: stats.depts.size >= 10 ? '✓ Atteint !' : `${stats.depts.size}/10 départements` },
+    { titre:'5 coups de cœur', atteint: coeurs.length >= 5, progress: coeurs.length/5, detail: coeurs.length >= 5 ? '✓ Atteint !' : `${coeurs.length}/5 coups de cœur` },
+  ];
+  const records = [
+    { l:'Domaines enregistrés', v: markers.length, sub:'' },
+    { l:'Domaines visités',     v: stats.fait.length, sub:'' },
+    { l:'Total cuvées',         v: stats.allCuvees.length, sub:'' },
+    { l:'Coups de cœur',        v: coeurs.length, sub:'' },
+    { l:'Départements',         v: stats.depts.size, sub:'' },
+    { l:'Couverture France',    v:`${Math.round(stats.depts.size/101*100)}%`, sub:'des départements' },
+  ];
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      {coeurs.length > 0 ? (
+        <Card title="Vos coups de cœur" kicker={`${coeurs.length} cuvée${coeurs.length>1?'s':''}`} padding={0}>
+          <div style={{ display:'flex', flexDirection:'column' }}>
+            {coeurs.map((c,i) => (
+              <div key={i} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', gap:24, alignItems:'center', padding:'20px 28px', borderTop: i===0?'none':'1px solid var(--line-soft)' }}>
+                <div style={{ fontFamily:'Playfair Display', fontSize:44, fontWeight:900, color: i===0?'var(--orange)':'oklch(85% 0.012 75)', lineHeight:1, width:50, fontStyle:'italic' }}>{i+1}</div>
+                <div>
+                  <h4 style={{ fontFamily:'Playfair Display', fontSize:20, fontWeight:700, color:'var(--warm-black)' }}>{c.nom}</h4>
+                  <div style={{ fontFamily:'DM Sans', fontSize:12, color:'var(--muted)', marginTop:4 }}>{c._domaine}{c.appellation?` · ${c.appellation}`:''}{c.millesime?` · ${c.millesime}`:''}</div>
+                </div>
+                <span style={{ fontFamily:'DM Sans', fontSize:10, fontWeight:600, color:'oklch(35% 0.08 145)', background:'oklch(85% 0.04 145)', padding:'4px 12px', borderRadius:100, textTransform:'uppercase', letterSpacing:'0.08em', whiteSpace:'nowrap' }}>Coup de cœur 🍷</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : (
+        <Card title="Vos coups de cœur" kicker="Palmarès">
+          <p style={{ fontFamily:'DM Sans', fontSize:13, color:'var(--muted)', fontStyle:'italic', padding:'20px 0' }}>Marquez des cuvées en « Coup de cœur » dans Ma Carte pour les voir ici.</p>
+        </Card>
+      )}
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+        <Card title="Vos étapes" kicker="Progression sur la route">
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {etapes.map((e,i) => (
+              <div key={i} style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
+                <div style={{ width:36, height:36, borderRadius:'50%', flexShrink:0, background: e.atteint?'var(--orange)':'var(--tile)', border: e.atteint?'none':'1px dashed rgba(0,0,0,0.18)', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontFamily:'Playfair Display', fontWeight:700 }}>
+                  {e.atteint ? '✓' : <span style={{ color:'var(--muted)', fontSize:14 }}>·</span>}
+                </div>
+                <div style={{ flex:1, paddingTop:2 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:4 }}>
+                    <span style={{ fontFamily:'Playfair Display', fontSize:14, fontWeight:700, color:'var(--warm-black)' }}>{e.titre}</span>
+                  </div>
+                  <div style={{ fontFamily:'DM Sans', fontSize:12, color:'var(--muted)' }}>{e.detail}</div>
+                  {!e.atteint && e.progress > 0 && (
+                    <div style={{ marginTop:8, height:4, background:'rgba(0,0,0,0.06)', borderRadius:100, overflow:'hidden' }}>
+                      <div style={{ height:'100%', width:`${Math.min(e.progress*100,100)}%`, background:'var(--orange)' }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card title="Records" kicker="Vos statistiques clés">
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            {records.map(b => (
+              <div key={b.l} style={{ padding:14, background:'var(--tile)', borderRadius:12, border:'1px solid var(--line-soft)' }}>
+                <div style={{ fontFamily:'DM Sans', fontSize:9, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--muted)' }}>{b.l}</div>
+                <div style={{ fontFamily:'Playfair Display', fontSize:24, fontWeight:900, color:'var(--warm-black)', marginTop:4, lineHeight:1 }}>{b.v}</div>
+                {b.sub && <div style={{ fontFamily:'DM Sans', fontSize:11, color:'var(--muted)', marginTop:4 }}>{b.sub}</div>}
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ── TAB · Historique ─────────────────────────────────────────
+function TabHistorique({ stats }) {
+  const [limit, setLimit] = React.useState(5);
+  const visites = stats.visites;
+  const shown   = visites.slice(0, limit);
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      {visites.length ? (
+        <Card title="Domaines visités" kicker="Marqués comme « Fait »" padding={0}>
+          <div style={{ display:'flex', flexDirection:'column' }}>
+            {shown.map((v,i) => {
+              const ts = v.createdAt?.seconds ? new Date(v.createdAt.seconds*1000) : null;
+              const date = ts ? ts.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}) : '—';
+              const cuvCount = Array.isArray(v.cuvees) ? v.cuvees.length : 0;
+              const prix = Array.isArray(v.cuvees) ? v.cuvees.reduce((s,c)=>s+(parseFloat(c.prix)||0),0) : 0;
+              return (
+                <div key={v.id} style={{ display:'grid', gridTemplateColumns:'110px 1fr auto auto', gap:24, alignItems:'center', padding:'18px 28px', borderTop: i===0?'none':'1px solid var(--line-soft)' }}>
+                  <div className="mono" style={{ fontSize:12, color:'var(--muted)' }}>{date}</div>
+                  <div>
+                    <div style={{ fontFamily:'Playfair Display', fontSize:17, fontWeight:700, color:'var(--warm-black)' }}>{v.name}</div>
+                    {v.address && <div style={{ fontFamily:'DM Sans', fontSize:12, color:'var(--muted)', marginTop:2 }}>{v.address.split(',').slice(0,2).join(',')}</div>}
+                  </div>
+                  {prix > 0 ? (
+                    <div style={{ textAlign:'right' }}>
+                      <div style={{ fontFamily:'Playfair Display', fontSize:20, fontWeight:700, color:'var(--warm-black)' }}>{Math.round(prix)} €</div>
+                      <div style={{ fontFamily:'DM Sans', fontSize:10, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:2 }}>cuvées</div>
+                    </div>
+                  ) : <div />}
+                  <div style={{ textAlign:'right', minWidth:70 }}>
+                    <div style={{ fontFamily:'Playfair Display', fontSize:20, fontWeight:700, color:'var(--orange)' }}>{cuvCount}</div>
+                    <div style={{ fontFamily:'DM Sans', fontSize:10, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:2 }}>{cuvCount===1?'cuvée':'cuvées'}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      ) : (
+        <Card title="Domaines visités" kicker="Historique">
+          <p style={{ fontFamily:'DM Sans', fontSize:13, color:'var(--muted)', fontStyle:'italic', padding:'20px 0' }}>Marquez des domaines comme « Fait » dans Ma Carte pour les voir apparaître ici.</p>
+        </Card>
+      )}
+      {visites.length > limit && (
+        <div style={{ textAlign:'center', padding:16 }}>
+          <button onClick={() => setLimit(l=>l+5)} style={{ fontFamily:'DM Sans', fontSize:12, color:'var(--muted)', background:'transparent', border:'1px solid var(--line)', borderRadius:100, padding:'10px 24px', cursor:'pointer' }}>
+            Charger plus
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Sidebar ──────────────────────────────────────────────────
+function Sidebar({ user, firstName, markers, stats }) {
+  const display  = firstName || user?.email?.split('@')[0] || '';
+  const initials = display.slice(0,2).toUpperCase();
+  const mapsCount= Object.keys(window.__mdState.userMaps).length;
+  const prixTotal= stats.prixTotal;
+
+  function handleExport(format) {
+    if (format === 'csv') {
+      const rows = [['Domaine','Adresse','Statut','Département','Cuvée','Type','Appellation','Cépage','Millésime','Prix','Commentaire','Statut cuvée']];
+      markers.forEach(m => {
+        const cuvees = Array.isArray(m.cuvees) ? m.cuvees : [];
+        if (!cuvees.length) {
+          rows.push([m.name||'',m.address||'',m.statut||'',m.deptCode||'','','','','','','','','']);
+        } else {
+          cuvees.forEach(c => {
+            rows.push([m.name||'',m.address||'',m.statut||'',m.deptCode||'',c.nom||'',c.typeVin||'',c.appellation||'',c.cepage||'',c.millesime||'',c.prix||'',c.commentaire||'',c.statut||'']);
+          });
+        }
+      });
+      const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a'); a.href=url; a.download='mes-donnees-marguerite.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  return (
+    <div className="sidebar" style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      {/* Profile */}
+      <div style={{ background:'var(--card)', borderRadius:18, padding:22, border:'1px solid var(--line)', boxShadow:'0 1px 2px rgba(0,0,0,0.03)' }}>
+        <div style={{ display:'flex', gap:14, alignItems:'center', marginBottom:16 }}>
+          <div style={{ width:48, height:48, borderRadius:'50%', background:'var(--orange)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Playfair Display', fontWeight:700, fontSize:18, color:'white' }}>{initials}</div>
+          <div>
+            <div style={{ fontFamily:'Playfair Display', fontSize:17, fontWeight:700, color:'var(--warm-black)' }}>{display}</div>
+            <div className="mono" style={{ fontSize:10, color:'var(--muted)', marginTop:3, letterSpacing:'0.05em' }}>{user?.email}</div>
+          </div>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:1, background:'rgba(0,0,0,0.08)', borderRadius:10, overflow:'hidden' }}>
+          {[[stats.depts.size,'Dépts'],[mapsCount,'Cartes'],[stats.fait.length,'Visites']].map(([n,l]) => (
+            <div key={l} style={{ background:'var(--tile)', padding:'12px 0', textAlign:'center' }}>
+              <div style={{ fontFamily:'Playfair Display', fontSize:20, fontWeight:700, color:'var(--warm-black)', lineHeight:1 }}>{n}</div>
+              <div style={{ fontFamily:'DM Sans', fontSize:9, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.07em', marginTop:3 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Couverture */}
+      <div style={{ background:'var(--card)', borderRadius:18, padding:22, border:'1px solid var(--line)', boxShadow:'0 1px 2px rgba(0,0,0,0.03)' }}>
+        <div style={{ fontFamily:'DM Sans', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'var(--muted)', marginBottom:4 }}>Couverture</div>
+        <h3 style={{ fontFamily:'Playfair Display', fontSize:20, fontWeight:700, color:'var(--warm-black)' }}>De la France</h3>
+        <div style={{ display:'flex', alignItems:'baseline', gap:8, margin:'12px 0 4px' }}>
+          <span style={{ fontFamily:'Playfair Display', fontSize:48, fontWeight:900, color:'var(--orange)', lineHeight:1 }}>{Math.round(stats.depts.size/101*100)}%</span>
+          <span style={{ fontFamily:'DM Sans', fontSize:12, color:'var(--muted)' }}>des départements</span>
+        </div>
+        <div style={{ height:8, background:'rgba(0,0,0,0.06)', borderRadius:100, overflow:'hidden', margin:'10px 0 6px' }}>
+          <div style={{ height:'100%', width:`${Math.max(Math.round(stats.depts.size/101*100),1)}%`, background:'var(--orange)' }} />
+        </div>
+        <div className="mono" style={{ fontSize:10, color:'var(--muted)', display:'flex', justifyContent:'space-between' }}>
+          <span>{stats.depts.size} / 101</span><span>+{101-stats.depts.size} à explorer</span>
+        </div>
+      </div>
+
+      {/* Stats carte */}
+      <div style={{ background:'var(--card)', borderRadius:18, padding:22, border:'1px solid var(--line)', boxShadow:'0 1px 2px rgba(0,0,0,0.03)' }}>
+        <div style={{ fontFamily:'DM Sans', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:'var(--muted)', marginBottom:16 }}>Récapitulatif</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          {[
+            { l:'Domaines',         v: markers.length },
+            { l:'Cuvées',           v: stats.allCuvees.length },
+            { l:'Coups de cœur',    v: stats.allCuvees.filter(c=>c.statut==='coup_de_coeur').length },
+            { l:'Dépense totale',   v: prixTotal>0 ? `${Math.round(prixTotal)} €` : '—' },
+          ].map(r => (
+            <div key={r.l} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', borderBottom:'1px solid var(--line-soft)', paddingBottom:10 }}>
+              <span style={{ fontFamily:'DM Sans', fontSize:12, color:'var(--ink)' }}>{r.l}</span>
+              <span style={{ fontFamily:'Playfair Display', fontSize:18, fontWeight:700, color:'var(--warm-black)' }}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Export */}
+      <div style={{ background:'var(--orange)', borderRadius:18, padding:22, position:'relative', overflow:'hidden' }}>
+        <div style={{ position:'absolute', top:-20, right:-20, width:100, height:50, background:'rgba(255,255,255,0.15)', borderRadius:'50px 50px 0 0', pointerEvents:'none' }} />
+        <div style={{ fontFamily:'Playfair Display', fontSize:17, fontWeight:700, color:'white', marginBottom:6 }}>Exporter mes données</div>
+        <p style={{ fontFamily:'DM Sans', fontSize:12, color:'rgba(255,255,255,0.9)', lineHeight:1.6, marginBottom:14 }}>Téléchargez votre route au format CSV.</p>
+        <button onClick={() => handleExport('csv')} style={{ width:'100%', fontFamily:'DM Sans', fontSize:12, fontWeight:700, background:'white', color:'var(--orange)', border:'none', borderRadius:100, padding:'9px 0', cursor:'pointer' }}>
+          Télécharger CSV
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Loading ──────────────────────────────────────────────────
+function Loading() {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', flexDirection:'column', gap:16 }}>
+      <div style={{ fontFamily:'Playfair Display', fontSize:32, fontWeight:700, color:'var(--forest)', fontStyle:'italic' }}>Marguerite</div>
+      <div style={{ fontFamily:'DM Sans', fontSize:14, color:'var(--muted)' }}>Chargement de vos données…</div>
+    </div>
+  );
+}
+
+// ── App ──────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab]       = useState('ensemble');
+  const [data, setData]     = useState(null);
+
+  const boot = useCallback(() => {
+    const s = window.__mdState;
+    if (!s.loaded) return;
+    setData({ user: s.user, firstName: s.firstName, markers: s.markers });
+  }, []);
+
+  useEffect(() => {
+    window.__mdReactBoot = boot;
+    if (window.__mdState.loaded) boot();
+  }, [boot]);
+
+  if (!data) return <Loading />;
+
+  const stats = computeStats(data.markers);
+
+  return (
+    <>
+      <CloseBtn />
+      <Hero tab={tab} setTab={setTab} stats={stats} markers={data.markers} />
+      <div className="main-grid" style={{ maxWidth:1200, margin:'0 auto', padding:'32px 40px 80px', display:'grid', gridTemplateColumns:'1fr 300px', gap:28, alignItems:'start' }}>
+        <div>
+          {tab==='ensemble'   && <TabEnsemble  markers={data.markers} stats={stats} />}
+          {tab==='gouts'      && <TabGouts     stats={stats} />}
+          {tab==='palmares'   && <TabPalmares  stats={stats} markers={data.markers} />}
+          {tab==='historique' && <TabHistorique stats={stats} />}
+        </div>
+        <Sidebar user={data.user} firstName={data.firstName} markers={data.markers} stats={stats} />
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('react-root')).render(<App />);
+</script>
+</body>
+</html>

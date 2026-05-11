@@ -25,11 +25,7 @@
                 <span class="landing-nav-brand">Marguerite</span>
             </div>
             <div style="display:flex;align-items:center;gap:12px">
-                <button class="theme-toggle-btn" id="theme-toggle-landing" onclick="toggleTheme()" aria-label="Basculer thème">
-                    <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
-                    <span class="theme-toggle-icon">🌙</span>
-                </button>
-                <button class="landing-nav-cta" onclick="dismissLanding()">Ma Carte →</button>
+<button class="landing-nav-cta" onclick="dismissLanding()">Ma Carte →</button>
             </div>
         </nav>
 
@@ -349,13 +345,9 @@
                     <span id="itin-fab-badge" class="itin-fab-badge hidden">0</span>
                 </button>
             </div>
-            <button id="mes-donnees-btn" class="hidden" onclick="openMesDonnees()">Mes Données</button>
-            <button class="theme-toggle-btn" id="theme-toggle-carte" onclick="toggleTheme()" aria-label="Basculer thème">
-                <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
-                <span class="theme-toggle-icon">🌙</span>
-            </button>
-            <!-- Bouton Ma Carte — toujours visible, style sombre -->
-            <button id="mc-fab" onclick="openMcForm()" aria-label="Ma Carte">Ma Carte ✦</button>
+            <a id="mes-donnees-btn" class="hidden" href="Mes%20Donn%C3%A9es.html" style="text-decoration:none">Mes Données</a>
+<!-- Bouton Ma Carte — toujours visible, style sombre -->
+            <a id="mc-fab" href="Ma%20Carte.html" aria-label="Ma Carte" style="text-decoration:none">Ma Carte ✦</a>
         </div>
     </nav>
 
@@ -664,7 +656,7 @@
 
     <script src="app.js?v=3"></script>
     <script src="firebase-config.js?v=2"></script>
-    <script src="ma-carte.js?v=4"></script>
+    <script src="ma-carte.js?v=6"></script>
     <script src="reseau.js?v=2"></script>
 
     <!-- ===== Notification de sauvegarde ===== -->
@@ -970,28 +962,6 @@
     </div>
 
 <script>
-// ── Theme toggle ──────────────────────────────────────────
-(function() {
-  const saved = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  if (saved === 'dark' || (!saved && prefersDark)) {
-    document.documentElement.classList.add('dark');
-  }
-  _syncToggleIcons();
-})();
-
-function toggleTheme() {
-  const isDark = document.documentElement.classList.toggle('dark');
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  _syncToggleIcons();
-}
-
-function _syncToggleIcons() {
-  const isDark = document.documentElement.classList.contains('dark');
-  document.querySelectorAll('.theme-toggle-icon').forEach(el => {
-    el.textContent = isDark ? '☀️' : '🌙';
-  });
-}
 </script>
 
 </body>
